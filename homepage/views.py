@@ -16,3 +16,9 @@ def public_profile(request, username):
         "user_obj": user
     })
 
+# -------------------------------------------------------------
+# DASHBOARD (EDIT PAGE)
+# -------------------------------------------------------------
+def dashboard(request):
+    return render(request, "homepage/dashboard.html")
+

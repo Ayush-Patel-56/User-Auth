@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,13 +35,15 @@
             <div class="flex flex-col gap-3">
 
                 <!-- Google Button (not wired yet) -->
-                <button id="google-btn" class="flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 px-4 hover:bg-gray-100 apple-button-effect font-medium text-sm sm:text-base">
+                <button id="google-btn"
+                    class="flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 px-4 hover:bg-gray-100 apple-button-effect font-medium text-sm sm:text-base">
                     <i class="fab fa-google"></i>
                     Sign up with Google
                 </button>
 
                 <!-- Apple Button -->
-                <button class="flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 px-4 hover:bg-gray-100 apple-button-effect font-bold text-sm sm:text-base">
+                <button
+                    class="flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 px-4 hover:bg-gray-100 apple-button-effect font-bold text-sm sm:text-base">
                     <i class="fab fa-apple text-xl"></i>
                     Sign up with Apple
                 </button>
@@ -52,21 +55,23 @@
                 </div>
 
                 <!-- Create Account Button -->
-                <button id="create-email-btn" class="bg-[#00b4d8] text-white hover:bg-[#009ec4] apple-button-effect font-bold rounded-full py-3 px-4 text-sm sm:text-base">
+                <button id="create-email-btn"
+                    class="bg-[#00b4d8] text-white hover:bg-[#009ec4] apple-button-effect font-bold rounded-full py-3 px-4 text-sm sm:text-base">
                     Create account with email
                 </button>
 
                 <p class="text-[11px] text-gray-400 leading-tight mt-1">
-                    By signing up, you agree to the 
-                    <a class="text-[#00b4d8] hover:underline">Terms of Service</a>, 
-                    <a class="text-[#00b4d8] hover:underline">Privacy Policy</a>, 
-                    and 
+                    By signing up, you agree to the
+                    <a class="text-[#00b4d8] hover:underline">Terms of Service</a>,
+                    <a class="text-[#00b4d8] hover:underline">Privacy Policy</a>,
+                    and
                     <a class="text-[#00b4d8] hover:underline">Cookie Use</a>.
                 </p>
 
                 <div class="mt-10 mb-2">
                     <p class="font-bold text-lg mb-3">Already have an account?</p>
-                    <button id="signin-btn" class="w-full border border-gray-600 text-[#00b4d8] hover:bg-[#00b4d8] hover:bg-opacity-10 hover:border-[#00b4d8] apple-button-effect font-bold rounded-full py-2.5 px-4 text-sm sm:text-base">
+                    <button id="signin-btn"
+                        class="w-full border border-gray-600 text-[#00b4d8] hover:bg-[#00b4d8] hover:bg-opacity-10 hover:border-[#00b4d8] apple-button-effect font-bold rounded-full py-2.5 px-4 text-sm sm:text-base">
                         Sign in
                     </button>
                 </div>
@@ -122,6 +127,7 @@
         </div>
     </div>
 
-    <script src="{% static 'script.js' %}"></script>
+    <script src="{% static 'script.js' %}?v=9"></script>
 </body>
+
 </html>

@@ -21,6 +21,7 @@ class RegisterView(generics.CreateAPIView):
     Creates a new user + returns JWT tokens immediately.
     """
     queryset = User.objects.all()
+    
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]  # Anyone can register
 
@@ -86,4 +87,46 @@ def me_view(request):
         "id": user.id,
         "username": user.username,
         "email": user.email,
+        "profile": {
+            "title": user.profile.title,
+            "description": user.profile.description,
+            "avatar": user.profile.avatar.url if user.profile.avatar else None
+        }
     })
+
+
+# -------------------------------------------------------------
+# PROFILE MANAGEMENT (GET / UPDATE)
+# -------------------------------------------------------------
+from homepage.models import Profile, UserPhoto
+from .serializers import ProfileSerializer, UserPhotoSerializer
+
+class ProfileDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Return the profile of the currently logged-in user
+        return self.request.user.profile
+
+# -------------------------------------------------------------
+# GALLERY MANAGEMENT (UPLOAD / LIST / DELETE)
+# -------------------------------------------------------------
+class UserPhotoListCreateView(generics.ListCreateAPIView):
+    serializer_class = UserPhotoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserPhoto.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class UserPhotoDetailView(generics.DestroyAPIView):
+    queryset = UserPhoto.objects.all()
+    serializer_class = UserPhotoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Ensure user can only delete their own photos
+        return UserPhoto.objects.filter(user=self.request.user)

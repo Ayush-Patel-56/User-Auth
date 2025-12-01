@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Edit Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+
+<body class="min-h-screen text-white">
+
+    <!-- Background Layers -->
+    <div class="bg-fluid"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Navbar -->
+    <nav
+        class="fixed top-0 w-full z-50 glass-card border-b border-white/10 px-6 py-4 flex justify-between items-center">
+        <div class="font-bold text-xl tracking-tight">Dashboard</div>
+        <div class="flex gap-4">
+            <a id="view-public-btn" href="#" target="_blank"
+                class="text-sm font-medium hover:text-[#00b4d8] transition">View Public Page</a>
+            <button id="logout-btn"
+                class="text-sm font-medium text-red-400 hover:text-red-300 transition">Logout</button>
+        </div>
+    </nav>
+
+    <div class="pt-24 pb-12 px-4 max-w-4xl mx-auto z-10 relative">
+
+        <!-- Profile Edit Section -->
+        <div class="glass-card rounded-2xl p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-user-edit text-[#00b4d8]"></i> Edit Profile
+            </h2>
+
+            <form id="profile-form" class="space-y-6">
+
+                <!-- Avatar Upload -->
+                <div class="flex items-center gap-6">
+                    <div class="relative group">
+                        <img id="avatar-preview" src="https://via.placeholder.com/150"
+                            class="w-24 h-24 rounded-full object-cover border-2 border-white/20">
+                        <label for="avatar-input"
+                            class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                            <i class="fas fa-camera text-white"></i>
+                        </label>
+                        <input type="file" id="avatar-input" accept="image/*" class="hidden">
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Profile Picture</h3>
+                        <p class="text-sm text-gray-400">Click the image to upload a new one.</p>
+                    </div>
+                </div>
+
+                <!-- Text Fields -->
+                <div class="grid gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Title</label>
+                        <input type="text" id="title-input" class="input" placeholder="e.g. Welcome to my world">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Description</label>
+                        <textarea id="desc-input" rows="3" class="input"
+                            placeholder="Tell us about yourself..."></textarea>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="pt-4 border-t border-white/10">
+                        <h3 class="font-bold text-lg mb-4">Social Links</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1"><i
+                                        class="fab fa-instagram text-pink-500"></i> Instagram</label>
+                                <input type="url" id="instagram-input" class="input"
+                                    placeholder="https://instagram.com/...">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1"><i
+                                        class="fab fa-linkedin text-blue-500"></i> LinkedIn</label>
+                                <input type="url" id="linkedin-input" class="input"
+                                    placeholder="https://linkedin.com/in/...">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1"><i class="fab fa-github text-white"></i>
+                                    GitHub</label>
+                                <input type="url" id="github-input" class="input" placeholder="https://github.com/...">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1"><i
+                                        class="fas fa-envelope text-red-500"></i> Gmail</label>
+                                <input type="email" id="gmail-input" class="input" placeholder="your.email@gmail.com">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Save Button Removed from here -->
+            </form>
+        </div>
+
+        <!-- Gallery Section -->
+        <div class="glass-card rounded-2xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-images text-[#00b4d8]"></i> Gallery
+                </h2>
+                <button id="add-photo-btn" class="btn-secondary text-sm">
+                    <i class="fas fa-plus"></i> Add Photo
+                </button>
+            </div>
+
+            <!-- Photo Grid -->
+            <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- Photos will be injected here via JS -->
+            </div>
+        </div>
+
+        <!-- Save Changes Button (Moved to bottom) -->
+        <div class="mt-8 flex justify-center pb-12">
+            <button type="submit" form="profile-form"
+                class="btn-primary w-full sm:w-auto px-12 py-4 text-lg font-bold shadow-2xl hover:scale-105 transition-transform duration-200">
+                Save Changes
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Upload Photo Modal -->
+    <div id="photo-modal" class="modal hidden">
+        <div class="modal-panel">
+            <h3 class="text-xl font-bold mb-4">Upload Photo</h3>
+            <form id="photo-form" class="space-y-4">
+                <div
+                    class="border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:bg-white/5 transition relative">
+                    <input type="file" id="photo-input" accept="image/*"
+                        class="absolute inset-0 opacity-0 cursor-pointer" required>
+                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-sm text-gray-400" id="photo-filename">Click to select image</p>
+                </div>
+
+                <input type="text" id="caption-input" placeholder="Caption (optional)" class="input">
+
+                <div class="flex gap-3">
+                    <button type="submit" class="btn-primary flex-1">Upload</button>
+                    <button type="button" id="photo-cancel" class="btn-secondary flex-1">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cropper Modal -->
+    <div id="cropper-modal" class="modal hidden">
+        <div class="modal-panel max-w-2xl w-full">
+            <h3 class="text-xl font-bold mb-4">Crop Image</h3>
+            <div class="h-96 bg-black rounded-lg overflow-hidden mb-4">
+                <img id="cropper-image" class="max-w-full">
+            </div>
+            <div class="flex gap-3">
+                <button id="crop-save-btn" class="btn-primary flex-1">Crop & Save</button>
+                <button id="crop-cancel-btn" class="btn-secondary flex-1">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'script.js' %}?v=13"></script>
+</body>
+
+</html>

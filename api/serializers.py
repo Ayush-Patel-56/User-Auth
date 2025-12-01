@@ -4,6 +4,22 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 
 
+from homepage.models import Profile, UserPhoto
+
+class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = ['username', 'email', 'title', 'description', 'avatar', 'instagram', 'linkedin', 'github', 'gmail']
+
+class UserPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPhoto
+        fields = ['id', 'image', 'caption', 'created_at']
+        read_only_fields = ['created_at']
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -33,4 +49,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
 
         user = User.objects.create_user(password=password, **validated_data)
+        
+        # Extract name from username (e.g. "piyush13" -> "Piyush")
+        import re
+        match = re.match(r"([a-zA-Z]+)", user.username)
+        display_name = match.group(1).capitalize() if match else user.username
+
+        # Create profile with dynamic title & description
+        Profile.objects.create(
+            user=user,
+            title=f"{display_name}'s Profile",
+            description=f"Hello this is {display_name} and This is my personal corner of the internet."
+        )
+        
         return user

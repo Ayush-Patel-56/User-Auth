@@ -1,0 +1,9 @@
+Django>=5.0
+djangorestframework
+djangorestframework-simplejwt
+python-dotenv
+psycopg2-binary
+dj-database-url
+Pillow
+django-storages
+boto3
