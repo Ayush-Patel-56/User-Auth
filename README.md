@@ -42,6 +42,7 @@ DATABASE_URL=your_database_url_if_using_postgres
 # If using local sqlite, DATABASE_URL might not be strictly needed if settings.py handles it, but good to check.
 
 # Supabase / AWS S3 Credentials
+DATABASE_URL=your_database_url_if_using_postgres
 AWS_ACCESS_KEY_ID=your_supabase_access_key
 AWS_SECRET_ACCESS_KEY=your_supabase_secret_key
 ```
