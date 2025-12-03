@@ -58,4 +58,21 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Open your browser and visit: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+
+## Deployment (Render.com)
+
+This project is ready for deployment on Render.
+
+1.  **Create a New Web Service** on Render.
+2.  **Connect your GitHub repository.**
+3.  **Settings:**
+    *   **Runtime:** Python 3
+    *   **Build Command:** `./render-build.sh`
+    *   **Start Command:** `waitress-serve --listen=*:10000 core.wsgi:application`
+4.  **Environment Variables:**
+    Add the following variables in the Render dashboard (copy values from your local `.env`):
+    *   `DJANGO_SECRET_KEY`
+    *   `DATABASE_URL` (You can use a Render PostgreSQL database or your existing one)
+    *   `SUPABASE_ACCESS_KEY_ID` (or `AWS_ACCESS_KEY_ID` if you kept the old name)
+    *   `SUPABASE_SECRET_ACCESS_KEY` (or `AWS_SECRET_ACCESS_KEY`)
+    *   `PYTHON_VERSION`: `3.11.5` (optional, but recommended)

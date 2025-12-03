@@ -7,3 +7,4 @@ dj-database-url
 Pillow
 django-storages
 boto3
+waitress
