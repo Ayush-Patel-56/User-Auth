@@ -35,3 +35,7 @@ node_modules/
 # Local config overrides
 *.local
 *.log
+
+# Generated Static/Media files
+staticfiles/
+media/
