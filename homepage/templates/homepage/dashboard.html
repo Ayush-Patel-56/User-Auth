@@ -136,11 +136,19 @@
             <h3 class="text-xl font-bold mb-4">Upload Photo</h3>
             <form id="photo-form" class="space-y-4">
                 <div
-                    class="border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:bg-white/5 transition relative">
+                    class="border-2 border-dashed border-white/20 rounded-xl h-48 flex items-center justify-center relative overflow-hidden group hover:bg-white/5 transition">
                     <input type="file" id="photo-input" accept="image/*"
-                        class="absolute inset-0 opacity-0 cursor-pointer" required>
-                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                    <p class="text-sm text-gray-400" id="photo-filename">Click to select image</p>
+                        class="absolute inset-0 opacity-0 cursor-pointer z-20">
+
+                    <!-- Placeholder Content -->
+                    <div id="photo-placeholder" class="text-center pointer-events-none">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-sm text-gray-400" id="photo-filename">Click to select image</p>
+                    </div>
+
+                    <!-- Image Preview -->
+                    <img id="photo-preview-img"
+                        class="absolute inset-0 w-full h-full object-cover hidden z-10 pointer-events-none">
                 </div>
 
                 <input type="text" id="caption-input" placeholder="Caption (optional)" class="input">

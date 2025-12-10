@@ -351,8 +351,62 @@ if (signupModal && signinModal) {
 // -------------------------------------------------------------
 if (window.location.pathname.includes('/dashboard/')) {
 
-    const token = localStorage.getItem('access');
-    if (!token) window.location.href = '/'; // Redirect if not logged in
+    // Helper: Logout
+    const logout = () => {
+        localStorage.clear();
+        window.location.href = '/';
+    };
+
+    // Helper: Authenticated Fetch with Auto-Refresh
+    async function authFetch(url, options = {}) {
+        let token = localStorage.getItem('access');
+        if (!token) {
+            logout();
+            return Promise.reject("No token");
+        }
+
+        // Inject Header
+        options.headers = options.headers || {};
+        // Handle if headers is NOT a Headers object (simple object)
+        options.headers['Authorization'] = `Bearer ${token}`;
+
+        let response = await fetch(url, options);
+
+        // Handle 401 (Unauthorized/Expired)
+        if (response.status === 401) {
+            console.warn("Access token expired. Refreshing...");
+            const refresh = localStorage.getItem('refresh');
+
+            if (!refresh) {
+                logout();
+                return response;
+            }
+
+            try {
+                const refreshRes = await fetch('/api/token/refresh/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh })
+                });
+
+                if (refreshRes.ok) {
+                    const data = await refreshRes.json();
+                    localStorage.setItem('access', data.access);
+
+                    // Retry original request with NEW token
+                    options.headers['Authorization'] = `Bearer ${data.access}`;
+                    response = await fetch(url, options);
+                } else {
+                    console.error("Session expired completely.");
+                    logout();
+                }
+            } catch (err) {
+                console.error("Refresh failed:", err);
+                logout();
+            }
+        }
+        return response;
+    }
 
     // Elements
     const titleInput = document.getElementById('title-input');
@@ -371,9 +425,8 @@ if (window.location.pathname.includes('/dashboard/')) {
     async function loadProfile() {
         console.log("Loading profile data...");
         try {
-            const res = await fetch('/api/profile/', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            // Replaced fetch with authFetch
+            const res = await authFetch('/api/profile/');
             console.log("Profile API status:", res.status);
 
             if (res.ok) {
@@ -406,30 +459,36 @@ if (window.location.pathname.includes('/dashboard/')) {
     // CROPPER LOGIC
     // ---------------------------------------------------------
     let cropper = null;
+    let cropperMode = 'avatar'; // 'avatar' or 'gallery'
+    let currentGalleryBlob = null; // Store cropped blob for gallery upload
+
     const cropperModal = document.getElementById('cropper-modal');
     const cropperImage = document.getElementById('cropper-image');
 
-    // 1. Intercept File Selection
-    avatarInput.addEventListener('change', (e) => {
-        console.log("File selected:", e.target.files[0]);
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                cropperImage.src = e.target.result;
-                cropperModal.classList.remove('hidden');
+    // Helper to open cropper
+    const openCropper = (file, mode) => {
+        if (!file) return;
+        cropperMode = mode;
 
-                // Init Cropper
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(cropperImage, {
-                    aspectRatio: 1,
-                    viewMode: 1,
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-        // Clear input so same file can be selected again
-        e.target.value = '';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            cropperImage.src = e.target.result;
+            cropperModal.classList.remove('hidden');
+
+            // Init Cropper
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(cropperImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // 1. Intercept File Selection (Avatar)
+    avatarInput.addEventListener('change', (e) => {
+        openCropper(e.target.files[0], 'avatar');
+        e.target.value = ''; // Clear input
     });
 
     // 2. Cancel Crop
@@ -444,29 +503,47 @@ if (window.location.pathname.includes('/dashboard/')) {
         if (!cropper) return;
 
         const saveBtn = document.getElementById('crop-save-btn');
-
-        // Set loading state
         setButtonLoading(saveBtn, true);
 
         cropper.getCroppedCanvas().toBlob(async (blob) => {
-            const formData = new FormData();
-            formData.append('avatar', blob, 'avatar.png');
 
-            await fetch('/api/profile/', {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
+            if (cropperMode === 'avatar') {
+                // --- AVATAR SAVE LOGIC (Direct Upload) ---
+                const formData = new FormData();
+                formData.append('avatar', blob, 'avatar.png');
 
-            // Update UI
-            avatarPreview.src = URL.createObjectURL(blob);
-            cropperModal.classList.add('hidden');
-            cropper.destroy();
-            cropper = null;
+                // Replaced fetch with authFetch
+                await authFetch('/api/profile/', {
+                    method: 'PATCH',
+                    body: formData
+                });
 
-            // Remove loading state
+                // Update UI
+                avatarPreview.src = URL.createObjectURL(blob);
+                cropperModal.classList.add('hidden');
+            }
+            else if (cropperMode === 'gallery') {
+                // --- GALLERY SAVE LOGIC (Local Store & Preview) ---
+                currentGalleryBlob = blob;
+
+                // Show preview in Photo Modal
+                const previewImg = document.getElementById('photo-preview-img');
+                const placeholder = document.getElementById('photo-placeholder');
+
+                if (previewImg && placeholder) {
+                    previewImg.src = URL.createObjectURL(blob);
+                    previewImg.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+
+                cropperModal.classList.add('hidden');
+            }
+
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
             setButtonLoading(saveBtn, false);
-            // alert('Profile picture updated!');
         });
     });
 
@@ -489,10 +566,10 @@ if (window.location.pathname.includes('/dashboard/')) {
         // Set loading state
         setButtonLoading(submitBtn, true);
 
-        await fetch('/api/profile/', {
+        // Replaced fetch with authFetch
+        await authFetch('/api/profile/', {
             method: 'PATCH',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
@@ -505,25 +582,50 @@ if (window.location.pathname.includes('/dashboard/')) {
     });
 
     // Logout
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.clear();
-        window.location.href = '/';
-    });
+    document.getElementById('logout-btn').addEventListener('click', logout);
 
     // ---------------------------------------------------------
     // GALLERY LOGIC
     // ---------------------------------------------------------
     const photoModal = document.getElementById('photo-modal');
     const photoInput = document.getElementById('photo-input');
+    const photoPreview = document.getElementById('photo-preview-img');
+    const photoPlaceholder = document.getElementById('photo-placeholder');
+
+    const resetPhotoModal = () => {
+        photoModal.classList.add('hidden');
+        document.getElementById('photo-form').reset();
+        currentGalleryBlob = null; // Clear blob
+
+        // Reset Preview
+        if (photoPreview) {
+            photoPreview.src = '';
+            photoPreview.classList.add('hidden');
+        }
+        if (photoPlaceholder) {
+            photoPlaceholder.classList.remove('hidden');
+        }
+    };
 
     document.getElementById('add-photo-btn').onclick = () => photoModal.classList.remove('hidden');
-    document.getElementById('photo-cancel').onclick = () => photoModal.classList.add('hidden');
+    document.getElementById('photo-cancel').onclick = resetPhotoModal;
+
+    // Photo Preview Listener -> NOW OPENS CROPPER
+    if (photoInput && photoPreview && photoPlaceholder) {
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                openCropper(file, 'gallery');
+            }
+            // We don't need to manually set preview here; crop save will do it
+            e.target.value = ''; // Clear input so we can select same file again if needed
+        });
+    }
 
     // Load Photos
     async function loadPhotos() {
-        const res = await fetch('/api/photos/', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // Replaced fetch with authFetch
+        const res = await authFetch('/api/photos/');
         if (res.ok) {
             const photos = await res.json();
 
@@ -553,26 +655,28 @@ if (window.location.pathname.includes('/dashboard/')) {
         e.preventDefault();
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        const file = photoInput.files[0];
-        if (!file) return;
+
+        if (!currentGalleryBlob) {
+            alert("Please select and crop an image first.");
+            return;
+        }
 
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('image', currentGalleryBlob, 'photo.png');
         formData.append('caption', document.getElementById('caption-input').value);
 
         // Set loading state
         setButtonLoading(submitBtn, true);
 
-        const res = await fetch('/api/photos/', {
+        // Replaced fetch with authFetch
+        const res = await authFetch('/api/photos/', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
 
         if (res.ok) {
-            photoModal.classList.add('hidden');
+            resetPhotoModal();
             loadPhotos();
-            e.target.reset();
             setButtonLoading(submitBtn, false);
         } else {
             const data = await res.json();
@@ -585,9 +689,9 @@ if (window.location.pathname.includes('/dashboard/')) {
     window.deletePhoto = async (id) => {
         if (!confirm('Delete this photo?')) return;
 
-        await fetch(`/api/photos/${id}/`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
+        // Replaced fetch with authFetch
+        await authFetch(`/api/photos/${id}/`, {
+            method: 'DELETE'
         });
         loadPhotos();
     };
