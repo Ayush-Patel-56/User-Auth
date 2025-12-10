@@ -163,6 +163,21 @@ function burst(x, y) {
 
 
 // -------------------------------------------------------------
+// GLOBAL UTILITY: LOADING STATE MANAGEMENT
+// -------------------------------------------------------------
+function setButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.disabled = true;
+        button.dataset.originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+    } else {
+        button.disabled = false;
+        button.innerHTML = button.dataset.originalText || button.innerHTML;
+    }
+}
+
+
+// -------------------------------------------------------------
 // PART 2: JWT AUTH + POPUP LOGIC (LANDING PAGE ONLY)
 // -------------------------------------------------------------
 
@@ -218,6 +233,7 @@ if (signupModal && signinModal) {
         e.preventDefault();
 
         const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
 
         const payload = {
             username: form.username.value.trim(),
@@ -228,6 +244,9 @@ if (signupModal && signinModal) {
 
         const err = document.getElementById("signup-error");
         err.textContent = "";
+
+        // Set loading state
+        setButtonLoading(submitBtn, true);
 
         try {
             const res = await fetch(baseUrl + "/api/register/", {
@@ -240,6 +259,7 @@ if (signupModal && signinModal) {
 
             if (!res.ok) {
                 err.textContent = Object.values(data).flat().join(" ");
+                setButtonLoading(submitBtn, false);
                 return;
             }
 
@@ -247,11 +267,13 @@ if (signupModal && signinModal) {
             localStorage.setItem("refresh", data.refresh);
 
             console.log("Signup successful. Redirecting to dashboard...");
+            // Keep loading state while redirecting
             window.location.assign(window.location.origin + '/dashboard/');
 
         } catch (error) {
             console.error("Signup error:", error);
             err.textContent = "Network error. Try again.";
+            setButtonLoading(submitBtn, false);
         }
     });
 
@@ -263,12 +285,15 @@ if (signupModal && signinModal) {
         e.preventDefault();
 
         const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
         const identifier = form.identifier.value.trim();
         const password = form.password.value;
 
         const err = document.getElementById("signin-error");
         err.textContent = "";
 
+        // Set loading state
+        setButtonLoading(submitBtn, true);
 
         let loginUsername = identifier;
 
@@ -292,6 +317,7 @@ if (signupModal && signinModal) {
 
             if (!res.ok) {
                 err.textContent = data.detail || "Invalid credentials.";
+                setButtonLoading(submitBtn, false);
                 return;
             }
 
@@ -305,11 +331,16 @@ if (signupModal && signinModal) {
             if (me.ok) {
                 const user = await me.json();
                 console.log("Login successful. Redirecting to dashboard...");
+                // Keep loading state while redirecting
                 window.location.assign(window.location.origin + '/dashboard/');
+            } else {
+                err.textContent = "Failed to load user data.";
+                setButtonLoading(submitBtn, false);
             }
         } catch (e) {
             console.error("Login error:", e);
             err.textContent = "Network error.";
+            setButtonLoading(submitBtn, false);
         }
     });
 }
@@ -412,6 +443,11 @@ if (window.location.pathname.includes('/dashboard/')) {
     document.getElementById('crop-save-btn').addEventListener('click', () => {
         if (!cropper) return;
 
+        const saveBtn = document.getElementById('crop-save-btn');
+
+        // Set loading state
+        setButtonLoading(saveBtn, true);
+
         cropper.getCroppedCanvas().toBlob(async (blob) => {
             const formData = new FormData();
             formData.append('avatar', blob, 'avatar.png');
@@ -427,6 +463,9 @@ if (window.location.pathname.includes('/dashboard/')) {
             cropperModal.classList.add('hidden');
             cropper.destroy();
             cropper = null;
+
+            // Remove loading state
+            setButtonLoading(saveBtn, false);
             // alert('Profile picture updated!');
         });
     });
@@ -434,6 +473,9 @@ if (window.location.pathname.includes('/dashboard/')) {
     // Update Profile (Text Only)
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Button is outside the form, so we can't use e.target.querySelector
+        const submitBtn = document.querySelector('button[form="profile-form"]');
 
         const payload = {
             title: titleInput.value,
@@ -444,6 +486,9 @@ if (window.location.pathname.includes('/dashboard/')) {
             gmail: gmailInput.value
         };
 
+        // Set loading state
+        setButtonLoading(submitBtn, true);
+
         await fetch('/api/profile/', {
             method: 'PATCH',
             headers: {
@@ -453,8 +498,10 @@ if (window.location.pathname.includes('/dashboard/')) {
             body: JSON.stringify(payload)
         });
 
-
         loadProfile();
+
+        // Remove loading state
+        setButtonLoading(submitBtn, false);
     });
 
     // Logout
@@ -505,12 +552,16 @@ if (window.location.pathname.includes('/dashboard/')) {
     document.getElementById('photo-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const submitBtn = e.target.querySelector('button[type="submit"]');
         const file = photoInput.files[0];
         if (!file) return;
 
         const formData = new FormData();
         formData.append('image', file);
         formData.append('caption', document.getElementById('caption-input').value);
+
+        // Set loading state
+        setButtonLoading(submitBtn, true);
 
         const res = await fetch('/api/photos/', {
             method: 'POST',
@@ -522,9 +573,11 @@ if (window.location.pathname.includes('/dashboard/')) {
             photoModal.classList.add('hidden');
             loadPhotos();
             e.target.reset();
+            setButtonLoading(submitBtn, false);
         } else {
             const data = await res.json();
             alert(data.detail || "Upload failed. Limit reached?");
+            setButtonLoading(submitBtn, false);
         }
     });
 
