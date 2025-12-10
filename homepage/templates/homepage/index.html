@@ -95,10 +95,47 @@
         <div class="modal-panel">
             <h3 class="text-xl font-bold mb-4">Create an account</h3>
             <form id="signup-form" class="space-y-3">
-                <input name="username" placeholder="Username" class="input" required />
+                <div>
+                    <input name="username" placeholder="Username" class="input" required />
+                    <p id="username-error" class="text-red-400 text-xs mt-1 hidden">Username must be at least 3
+                        characters</p>
+                </div>
                 <input name="email" type="email" placeholder="Email" class="input" required />
-                <input name="password" type="password" placeholder="Password" class="input" required />
-                <input name="password2" type="password" placeholder="Confirm Password" class="input" required />
+                <div>
+                    <input name="password" type="password" placeholder="Password" class="input" required />
+                    <!-- Password Strength Indicator -->
+                    <div id="password-strength" class="mt-2 hidden">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                                <div id="strength-bar" class="h-full transition-all duration-300" style="width: 0%">
+                                </div>
+                            </div>
+                            <span id="strength-text" class="text-xs font-medium"></span>
+                        </div>
+                        <ul class="text-xs space-y-1">
+                            <li id="req-length" class="text-gray-400 flex items-center gap-2">
+                                <i class="fas fa-circle text-[6px]"></i>
+                                <span>At least 8 characters</span>
+                            </li>
+                            <li id="req-uppercase" class="text-gray-400 flex items-center gap-2">
+                                <i class="fas fa-circle text-[6px]"></i>
+                                <span>One uppercase letter</span>
+                            </li>
+                            <li id="req-number" class="text-gray-400 flex items-center gap-2">
+                                <i class="fas fa-circle text-[6px]"></i>
+                                <span>One number</span>
+                            </li>
+                            <li id="req-special" class="text-gray-400 flex items-center gap-2">
+                                <i class="fas fa-circle text-[6px]"></i>
+                                <span>One special character</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <input name="password2" type="password" placeholder="Confirm Password" class="input" required />
+                    <p id="password-match-error" class="text-red-400 text-xs mt-1 hidden">Passwords do not match</p>
+                </div>
 
                 <div class="flex gap-3">
                     <button type="submit" class="btn-primary">Create Account</button>

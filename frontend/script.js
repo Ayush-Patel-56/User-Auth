@@ -178,6 +178,125 @@ function setButtonLoading(button, isLoading) {
 
 
 // -------------------------------------------------------------
+// GLOBAL UTILITY: TOAST NOTIFICATIONS
+// -------------------------------------------------------------
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-6 py-4 rounded-xl shadow-2xl z-50 transform transition-all duration-300 ease-out glass-card border ${type === 'success'
+        ? 'border-green-500/30 bg-green-500/10'
+        : type === 'error'
+            ? 'border-red-500/30 bg-red-500/10'
+            : 'border-blue-500/30 bg-blue-500/10'
+        }`;
+
+    const icon = type === 'success'
+        ? '<i class="fas fa-check-circle text-green-400"></i>'
+        : type === 'error'
+            ? '<i class="fas fa-exclamation-circle text-red-400"></i>'
+            : '<i class="fas fa-info-circle text-blue-400"></i>';
+
+    toast.innerHTML = `
+        <div class="flex items-center gap-3">
+            ${icon}
+            <span class="text-white font-medium">${message}</span>
+        </div>
+    `;
+
+    // Initial state for animation
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+
+// -------------------------------------------------------------
+// GLOBAL UTILITY: JWT TOKEN REFRESH
+// -------------------------------------------------------------
+async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem('refresh');
+
+    if (!refreshToken) {
+        console.log('No refresh token found');
+        return null;
+    }
+
+    try {
+        const response = await fetch('/api/token/refresh/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh: refreshToken })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('access', data.access);
+            console.log('Access token refreshed successfully');
+            return data.access;
+        } else {
+            console.log('Refresh token expired or invalid');
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        return null;
+    }
+}
+
+async function fetchWithTokenRefresh(url, options = {}) {
+    const token = localStorage.getItem('access');
+
+    // Add authorization header if not present
+    if (token && !options.headers) {
+        options.headers = {};
+    }
+    if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Make the initial request
+    let response = await fetch(url, options);
+
+    // If 401 Unauthorized, try to refresh token and retry
+    if (response.status === 401) {
+        console.log('Access token expired, attempting refresh...');
+
+        const newToken = await refreshAccessToken();
+
+        if (newToken) {
+            // Retry request with new token
+            options.headers['Authorization'] = `Bearer ${newToken}`;
+            response = await fetch(url, options);
+            console.log('Request retried with new token');
+        } else {
+            // Refresh failed, redirect to login
+            console.log('Token refresh failed, redirecting to login...');
+            window.location.href = '/';
+            return response;
+        }
+    }
+
+    return response;
+}
+
+// -------------------------------------------------------------
 // PART 2: JWT AUTH + POPUP LOGIC (LANDING PAGE ONLY)
 // -------------------------------------------------------------
 
@@ -202,6 +321,175 @@ if (signupModal && signinModal) {
 
 
     // -------------------------------------------------------------
+    // USERNAME LENGTH VALIDATION
+    // -------------------------------------------------------------
+    const signupForm = document.getElementById("signup-form");
+    const usernameInput = signupForm.querySelector('input[name="username"]');
+    const usernameError = document.getElementById('username-error');
+
+    function validateUsername() {
+        const username = usernameInput.value.trim();
+
+        if (username.length > 0 && username.length < 3) {
+            // Show error if less than 3 characters
+            usernameError.classList.remove('hidden');
+            usernameInput.classList.add('border-red-500', 'border-2');
+            return false;
+        } else {
+            // Hide error if 3+ characters or empty
+            usernameError.classList.add('hidden');
+            usernameInput.classList.remove('border-red-500', 'border-2');
+            return username.length >= 3;
+        }
+    }
+
+    // Validate in real-time as user types
+    usernameInput.addEventListener('input', validateUsername);
+
+
+    // -------------------------------------------------------------
+    // PASSWORD STRENGTH VALIDATION
+    // -------------------------------------------------------------
+    const passwordInput = signupForm.querySelector('input[name="password"]');
+    const passwordStrengthDiv = document.getElementById('password-strength');
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+
+    const reqLength = document.getElementById('req-length');
+    const reqUppercase = document.getElementById('req-uppercase');
+    const reqNumber = document.getElementById('req-number');
+    const reqSpecial = document.getElementById('req-special');
+
+    function checkPasswordStrength() {
+        const password = passwordInput.value;
+
+        // Show/hide strength indicator
+        if (password.length === 0) {
+            passwordStrengthDiv.classList.add('hidden');
+            return { score: 0, isStrong: false };
+        } else {
+            passwordStrengthDiv.classList.remove('hidden');
+        }
+
+        // Check each requirement
+        const hasLength = password.length >= 8;
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+        // Update requirement indicators
+        updateRequirement(reqLength, hasLength);
+        updateRequirement(reqUppercase, hasUppercase);
+        updateRequirement(reqNumber, hasNumber);
+        updateRequirement(reqSpecial, hasSpecial);
+
+        // Calculate strength score
+        const score = [hasLength, hasUppercase, hasNumber, hasSpecial].filter(Boolean).length;
+
+        // Show/hide requirements checklist based on strength
+        const requirementsList = passwordStrengthDiv.querySelector('ul');
+        if (score === 4) {
+            // Hide checklist when all requirements are met
+            requirementsList.classList.add('hidden');
+        } else {
+            // Show checklist when requirements are not fully met
+            requirementsList.classList.remove('hidden');
+        }
+
+        // Update strength bar and text
+        if (score === 0) {
+            strengthBar.style.width = '0%';
+            strengthBar.style.backgroundColor = '#ef4444'; // red
+            strengthText.textContent = '';
+        } else if (score === 1 || score === 2) {
+            strengthBar.style.width = '33%';
+            strengthBar.style.backgroundColor = '#ef4444'; // red
+            strengthText.textContent = 'Weak';
+            strengthText.className = 'text-xs font-medium text-red-400';
+        } else if (score === 3) {
+            strengthBar.style.width = '66%';
+            strengthBar.style.backgroundColor = '#f59e0b'; // orange
+            strengthText.textContent = 'Medium';
+            strengthText.className = 'text-xs font-medium text-orange-400';
+        } else {
+            strengthBar.style.width = '100%';
+            strengthBar.style.backgroundColor = '#10b981'; // green
+            strengthText.textContent = 'Strong';
+            strengthText.className = 'text-xs font-medium text-green-400';
+        }
+
+        return { score, isStrong: score === 4 };
+    }
+
+    function updateRequirement(element, isMet) {
+        const icon = element.querySelector('i');
+        const span = element.querySelector('span');
+
+        if (isMet) {
+            icon.className = 'fas fa-check text-xs text-green-400';
+            span.style.color = '#10b981'; // green
+        } else {
+            icon.className = 'fas fa-circle text-[6px]';
+            element.classList.add('text-gray-400');
+            span.style.color = '#9ca3af'; // gray
+        }
+    }
+
+    // Validate in real-time as user types password
+    passwordInput.addEventListener('input', () => {
+        checkPasswordStrength();
+        // Also re-check password match if confirm password has content
+        if (password2Input.value.length > 0) {
+            validatePasswordMatch();
+        }
+    });
+
+
+    // -------------------------------------------------------------
+    // PASSWORD MATCH VALIDATION
+    // -------------------------------------------------------------
+    const password2Input = signupForm.querySelector('input[name="password2"]');
+    const passwordMatchError = document.getElementById("password-match-error");
+
+    function validatePasswordMatch() {
+        const password1 = passwordInput.value;
+        const password2 = password2Input.value;
+
+        // Only validate if user has started typing in password2
+        if (password2.length === 0) {
+            // Hide error and reset styling when confirm password is empty
+            passwordMatchError.classList.add('hidden');
+            password2Input.classList.remove('border-red-500', 'border-2');
+            return true;
+        }
+
+        // Check if passwords match from the first character
+        if (password1 !== password2) {
+            // Show error message and red border
+            passwordMatchError.classList.remove('hidden');
+            password2Input.classList.add('border-red-500', 'border-2');
+            return false;
+        } else {
+            // Hide error and reset styling when passwords match
+            passwordMatchError.classList.add('hidden');
+            password2Input.classList.remove('border-red-500', 'border-2');
+            return true;
+        }
+    }
+
+    // Validate in real-time as user types in confirm password field
+    password2Input.addEventListener('input', validatePasswordMatch);
+
+    // Also re-validate when password1 changes (if password2 has content)
+    passwordInput.addEventListener('input', () => {
+        if (password2Input.value.length > 0) {
+            validatePasswordMatch();
+        }
+    });
+
+
+
+    // -------------------------------------------------------------
     // SIGNUP FORM SUBMIT
     // -------------------------------------------------------------
     document.getElementById("signup-form").addEventListener("submit", async (e) => {
@@ -209,6 +497,25 @@ if (signupModal && signinModal) {
 
         const form = e.target;
         const submitBtn = form.querySelector('button[type="submit"]');
+
+        // Validate username length
+        if (!validateUsername()) {
+            showToast('Username must be at least 3 characters', 'error');
+            return;
+        }
+
+        // Validate password strength
+        const strengthCheck = checkPasswordStrength();
+        if (!strengthCheck.isStrong) {
+            showToast('Please meet all password requirements', 'error');
+            return;
+        }
+
+        // Validate password match before submitting
+        if (!validatePasswordMatch()) {
+            // Just keep the red border, error message is already showing
+            return;
+        }
 
         const payload = {
             username: form.username.value.trim(),
@@ -342,13 +649,83 @@ if (window.location.pathname.includes('/dashboard/')) {
     const galleryGrid = document.getElementById('gallery-grid');
     const viewPublicBtn = document.getElementById('view-public-btn');
 
+    // -------------------------------------------------------------
+    // VALIDATION FUNCTIONS
+    // -------------------------------------------------------------
+    function validateSocialLink(input, platform) {
+        const value = input.value.trim();
+
+        // Empty is allowed (optional field)
+        if (!value) {
+            clearValidationError(input);
+            return true;
+        }
+
+        let isValid = false;
+        let errorMsg = '';
+
+        switch (platform) {
+            case 'instagram':
+                isValid = value.toLowerCase().includes('instagram.com');
+                errorMsg = 'Must be a valid Instagram URL';
+                break;
+            case 'linkedin':
+                isValid = value.toLowerCase().includes('linkedin.com');
+                errorMsg = 'Must be a valid LinkedIn URL ';
+                break;
+            case 'github':
+                isValid = value.toLowerCase().includes('github.com');
+                errorMsg = 'Must be a valid GitHub URL ';
+                break;
+            case 'gmail':
+                // Email validation regex
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                isValid = emailRegex.test(value);
+                errorMsg = 'Please enter a valid email address';
+                break;
+        }
+
+        if (isValid) {
+            clearValidationError(input);
+            return true;
+        } else {
+            showValidationError(input, errorMsg);
+            return false;
+        }
+    }
+
+    function showValidationError(input, message) {
+        // Add red border
+        input.classList.add('border-red-500', 'border-2');
+        input.classList.remove('border-white/10');
+
+        // Check if error message already exists
+        let errorElement = input.parentElement.querySelector('.validation-error');
+        if (!errorElement) {
+            errorElement = document.createElement('p');
+            errorElement.className = 'validation-error text-red-400 text-xs mt-1';
+            input.parentElement.appendChild(errorElement);
+        }
+        errorElement.textContent = message;
+    }
+
+    function clearValidationError(input) {
+        // Remove red border
+        input.classList.remove('border-red-500', 'border-2');
+        input.classList.add('border-white/10');
+
+        // Remove error message
+        const errorElement = input.parentElement.querySelector('.validation-error');
+        if (errorElement) {
+            errorElement.remove();
+        }
+    }
+
     // Load Profile Data
     async function loadProfile() {
         console.log("Loading profile data...");
         try {
-            const res = await fetch('/api/profile/', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await fetchWithTokenRefresh('/api/profile/', {});
             console.log("Profile API status:", res.status);
 
             if (res.ok) {
@@ -376,6 +753,39 @@ if (window.location.pathname.includes('/dashboard/')) {
             console.error("Error loading profile:", error);
         }
     }
+
+    // -------------------------------------------------------------
+    // ATTACH VALIDATION LISTENERS
+    // -------------------------------------------------------------
+    if (instagramInput) {
+        instagramInput.addEventListener('blur', () => validateSocialLink(instagramInput, 'instagram'));
+        instagramInput.addEventListener('input', () => {
+            // Clear error while typing, re-validate on blur
+            if (instagramInput.value.trim() === '') clearValidationError(instagramInput);
+        });
+    }
+
+    if (linkedinInput) {
+        linkedinInput.addEventListener('blur', () => validateSocialLink(linkedinInput, 'linkedin'));
+        linkedinInput.addEventListener('input', () => {
+            if (linkedinInput.value.trim() === '') clearValidationError(linkedinInput);
+        });
+    }
+
+    if (githubInput) {
+        githubInput.addEventListener('blur', () => validateSocialLink(githubInput, 'github'));
+        githubInput.addEventListener('input', () => {
+            if (githubInput.value.trim() === '') clearValidationError(githubInput);
+        });
+    }
+
+    if (gmailInput) {
+        gmailInput.addEventListener('blur', () => validateSocialLink(gmailInput, 'gmail'));
+        gmailInput.addEventListener('input', () => {
+            if (gmailInput.value.trim() === '') clearValidationError(gmailInput);
+        });
+    }
+
 
     // ---------------------------------------------------------
     // CROPPER LOGIC
@@ -427,9 +837,8 @@ if (window.location.pathname.includes('/dashboard/')) {
             const formData = new FormData();
             formData.append('avatar', blob, 'avatar.png');
 
-            await fetch('/api/profile/', {
+            await fetchWithTokenRefresh('/api/profile/', {
                 method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
 
@@ -452,6 +861,18 @@ if (window.location.pathname.includes('/dashboard/')) {
         // Button is outside the form, so we can't use e.target.querySelector
         const submitBtn = document.querySelector('button[form="profile-form"]');
 
+        // Validate all social links before submitting
+        const instagramValid = validateSocialLink(instagramInput, 'instagram');
+        const linkedinValid = validateSocialLink(linkedinInput, 'linkedin');
+        const githubValid = validateSocialLink(githubInput, 'github');
+        const gmailValid = validateSocialLink(gmailInput, 'gmail');
+
+        // If any validation fails, don't submit
+        if (!instagramValid || !linkedinValid || !githubValid || !gmailValid) {
+            showToast('Please fix validation errors before saving', 'error');
+            return;
+        }
+
         const payload = {
             title: titleInput.value,
             description: descInput.value,
@@ -464,10 +885,9 @@ if (window.location.pathname.includes('/dashboard/')) {
         // Set loading state
         setButtonLoading(submitBtn, true);
 
-        await fetch('/api/profile/', {
+        await fetchWithTokenRefresh('/api/profile/', {
             method: 'PATCH',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
@@ -477,6 +897,9 @@ if (window.location.pathname.includes('/dashboard/')) {
 
         // Remove loading state
         setButtonLoading(submitBtn, false);
+
+        // Show success toast
+        showToast('Profile updated successfully!', 'success');
     });
 
     // Logout
@@ -496,9 +919,7 @@ if (window.location.pathname.includes('/dashboard/')) {
 
     // Load Photos
     async function loadPhotos() {
-        const res = await fetch('/api/photos/', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await fetchWithTokenRefresh('/api/photos/', {});
         if (res.ok) {
             const photos = await res.json();
 
@@ -538,9 +959,8 @@ if (window.location.pathname.includes('/dashboard/')) {
         // Set loading state
         setButtonLoading(submitBtn, true);
 
-        const res = await fetch('/api/photos/', {
+        const res = await fetchWithTokenRefresh('/api/photos/', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
 
@@ -558,13 +978,14 @@ if (window.location.pathname.includes('/dashboard/')) {
 
     // Delete Photo (Global function for onclick)
     window.deletePhoto = async (id) => {
-        if (!confirm('Delete this photo?')) return;
-
-        await fetch(`/api/photos/${id}/`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
+        await fetchWithTokenRefresh(`/api/photos/${id}/`, {
+            method: 'DELETE'
         });
+
         loadPhotos();
+
+        // Show success toast
+        showToast('Photo deleted successfully!', 'success');
     };
 
     // Init
