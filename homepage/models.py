@@ -65,3 +65,25 @@ class UserPhoto(models.Model):
 
     def __str__(self):
         return f"Photo by {self.user.username} at {self.created_at}"
+
+class PhotoLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photo_likes')
+    photo = models.ForeignKey(UserPhoto, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'photo'], name='unique_user_photo_like')
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.photo.id}"
+
+class PhotoComment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photo_comments')
+    photo = models.ForeignKey(UserPhoto, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} on {self.photo.id}: {self.text[:20]}"

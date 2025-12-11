@@ -130,3 +130,83 @@ class UserPhotoDetailView(generics.DestroyAPIView):
     def get_queryset(self):
         # Ensure user can only delete their own photos
         return UserPhoto.objects.filter(user=self.request.user)
+
+# -------------------------------------------------------------
+# LIKE FEATURE
+# -------------------------------------------------------------
+from homepage.models import PhotoLike, PhotoComment
+from .serializers import CommentSerializer
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def toggle_like(request, photo_id):
+    """
+    GET /api/photos/<id>/like/  -> Check status
+    POST /api/photos/<id>/like/ -> Toggle status
+    Returns: { "is_liked": bool, "like_count": int }
+    """
+    try:
+        photo = UserPhoto.objects.get(id=photo_id)
+    except UserPhoto.DoesNotExist:
+        return Response({"detail": "Photo not found"}, status=404)
+
+    user = request.user
+    
+    if request.method == 'GET':
+        is_liked = PhotoLike.objects.filter(user=user, photo=photo).exists()
+        return Response({
+            "is_liked": is_liked,
+            "like_count": photo.likes.count()
+        })
+
+    # POST logic (Toggle)
+    existing_like = PhotoLike.objects.filter(user=user, photo=photo).first()
+    
+    if existing_like:
+        # UNLIKE
+        existing_like.delete()
+        is_liked = False
+    else:
+        # LIKE
+        PhotoLike.objects.create(user=user, photo=photo)
+        is_liked = True
+    
+    return Response({
+        "is_liked": is_liked,
+        "like_count": photo.likes.count()
+    })
+
+# -------------------------------------------------------------
+# COMMENT FEATURE
+# -------------------------------------------------------------
+class PhotoCommentListView(generics.ListCreateAPIView):
+    """
+    GET /api/photos/<id>/comments/  -> List comments
+    POST /api/photos/<id>/comments/ -> Add comment
+    """
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated] # Or AllowAny for GET if public
+
+    def get_queryset(self):
+        photo_id = self.kwargs['photo_id']
+        return PhotoComment.objects.filter(photo_id=photo_id).order_by('created_at')
+
+    def perform_create(self, serializer):
+        photo_id = self.kwargs['photo_id']
+        try:
+            photo = UserPhoto.objects.get(id=photo_id)
+            serializer.save(user=self.request.user, photo=photo)
+        except UserPhoto.DoesNotExist:
+            raise serializers.ValidationError("Photo not found")
+
+class PhotoCommentDetailView(generics.DestroyAPIView):
+    """
+    DELETE /api/comments/<id>/
+    """
+    queryset = PhotoComment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Only allow deleting own comments
+        return PhotoComment.objects.filter(user=self.request.user)

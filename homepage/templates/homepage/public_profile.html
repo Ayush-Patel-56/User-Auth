@@ -79,11 +79,15 @@
         <!-- Gallery Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {% for photo in user_obj.photos.all %}
-            <div class="glass-card rounded-xl overflow-hidden hover:scale-[1.02] transition duration-300">
-                <img src="{{ photo.image.url }}" class="w-full aspect-square object-cover">
+            <div
+                class="glass-card rounded-xl overflow-hidden hover:scale-[1.02] transition duration-300 cursor-pointer group">
+                <!-- Added data-caption and data-photo-id attributes -->
+                <img src="{{ photo.image.url }}" data-caption="{{ photo.caption|default:'' }}"
+                    data-photo-id="{{ photo.id }}"
+                    class="w-full aspect-square object-cover gallery-item group-hover:opacity-90 transition">
                 {% if photo.caption %}
                 <div class="p-4">
-                    <p class="text-sm text-gray-300">{{ photo.caption }}</p>
+                    <p class="text-sm text-gray-300 truncate">{{ photo.caption }}</p>
                 </div>
                 {% endif %}
             </div>
@@ -101,6 +105,93 @@
             <a href="/" class="hover:text-[#00b4d8] mt-2 inline-block">Create your own page</a>
         </div>
 
+    </div>
+
+    <!-- Instagram-style Lightbox Modal -->
+    <div id="lightbox-modal"
+        class="fixed inset-0 z-50 bg-black/90 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <!-- Close Button -->
+        <button id="lightbox-close"
+            class="absolute top-4 right-4 text-white/70 hover:text-red-500 transition-colors z-[60] p-2">
+            <i class="fas fa-times text-3xl"></i>
+        </button>
+
+        <!-- Main Card Container -->
+        <div class="flex flex-col lg:flex-row w-full max-w-6xl max-h-[90vh] bg-black rounded-xl overflow-hidden shadow-2xl relative"
+            onclick="event.stopPropagation()">
+
+            <!-- Left: Image Area -->
+            <div
+                class="flex-1 bg-black flex items-center justify-center relative min-h-[40vh] lg:min-h-full overflow-hidden">
+                <img id="lightbox-img" src="" class="max-w-full max-h-[50vh] lg:max-h-full object-contain">
+            </div>
+
+            <!-- Right: Sidebar (User Info & Caption & Comments) -->
+            <div class="w-full lg:w-[400px] bg-[#151515] flex flex-col border-l border-white/10 lg:h-auto">
+
+                <!-- 1. Header -->
+                <div class="p-4 border-b border-white/10 flex items-center gap-3 shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-gray-700 overflow-hidden border border-white/20">
+                        {% if user_obj.profile.avatar %}
+                        <img src="{{ user_obj.profile.avatar.url }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full bg-blue-500 flex items-center justify-center text-xs font-bold">{{
+                            user_obj.username|slice:":1"|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <span class="font-bold text-white text-sm">{{ user_obj.username }}</span>
+                </div>
+
+                <!-- 2. Scrollable Content (Caption + Comments) -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4" id="lightbox-comments-container">
+                    <!-- Caption Block -->
+                    <div class="flex gap-3 mb-4">
+                        <div class="w-8 h-8 shrink-0">
+                            {% if user_obj.profile.avatar %}
+                            <img src="{{ user_obj.profile.avatar.url }}"
+                                class="w-full h-full rounded-full object-cover">
+                            {% else %}
+                            <div
+                                class="w-full h-full rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold">
+                                {{ user_obj.username|slice:":1"|upper }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="font-bold text-white text-sm mr-2">{{ user_obj.username }}</span>
+                            <span id="lightbox-caption" class="text-sm text-gray-300 leading-relaxed"></span>
+                        </div>
+                    </div>
+
+                    <!-- Comments Injection Point -->
+                    <div id="comments-list" class="space-y-3">
+                        <!-- Comments will be injected here via JS -->
+                    </div>
+                </div>
+
+                <!-- 3. Actions Footer -->
+                <div class="p-4 border-t border-white/10 mt-auto bg-[#1a1a1a] shrink-0">
+                    <div class="flex items-center gap-4 text-2xl mb-2 text-white">
+                        <button id="like-btn" class="hover:scale-110 transition active:scale-95 focus:outline-none">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        <i class="far fa-comment cursor-pointer hover:text-blue-500 transition"></i>
+                        <i class="far fa-paper-plane cursor-pointer hover:text-green-500 transition"></i>
+                    </div>
+                    <p id="like-count" class="text-sm font-bold text-white mb-2">0 likes</p>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wide mb-3">Posted recently</p>
+
+                    <!-- Add Comment Form -->
+                    <form id="comment-form" class="flex items-center gap-2 border-t border-white/10 pt-3">
+                        <input type="text" id="comment-input" placeholder="Add a comment..."
+                            class="bg-transparent text-sm text-white focus:outline-none flex-1 placeholder-gray-500"
+                            autocomplete="off">
+                        <button type="submit"
+                            class="text-blue-400 font-bold text-sm hover:text-white disabled:opacity-50" disabled
+                            id="post-comment-btn">Post</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Main Script (Module) -->

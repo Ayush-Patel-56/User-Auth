@@ -4,7 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 
 
-from homepage.models import Profile, UserPhoto
+from homepage.models import Profile, UserPhoto, PhotoLike, PhotoComment
 
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
@@ -14,11 +14,37 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['username', 'email', 'title', 'description', 'avatar', 'instagram', 'linkedin', 'github', 'gmail', 'gender']
 
+class CommentSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PhotoComment
+        fields = ['id', 'username', 'avatar', 'text', 'created_at']
+        read_only_fields = ['id', 'username', 'avatar', 'created_at']
+
+    def get_avatar(self, obj):
+        if obj.user.profile.avatar:
+            return obj.user.profile.avatar.url
+        return None
+
 class UserPhotoSerializer(serializers.ModelSerializer):
+    is_liked = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+
     class Meta:
         model = UserPhoto
-        fields = ['id', 'image', 'caption', 'created_at']
-        read_only_fields = ['created_at']
+        fields = ['id', 'image', 'caption', 'created_at', 'is_liked', 'like_count']
+        read_only_fields = ['created_at', 'is_liked', 'like_count']
+
+    def get_is_liked(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return PhotoLike.objects.filter(user=user, photo=obj).exists()
+        return False
+
+    def get_like_count(self, obj):
+        return obj.likes.count()
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
