@@ -125,6 +125,11 @@ AUTHENTICATION_BACKENDS = [
 
 
 # ---------------------------------------------------------------
+# SECURITY SETTINGS
+# ---------------------------------------------------------------
+# Fix for Google Sign-In Popup Hanging (COOP)
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
 # INTERNATIONALIZATION (default)
 # ---------------------------------------------------------------
 LANGUAGE_CODE = 'en-us'

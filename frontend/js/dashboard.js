@@ -316,6 +316,21 @@ export function initDashboard() {
             window.location.href = '/';
         });
 
+        // Share Profile Link
+        const shareBtn = document.getElementById('share-profile-btn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', () => {
+                // Get the processed absolute URL from the view-public-btn
+                const url = viewPublicBtn.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Profile link copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    showToast('Failed to copy', 'error');
+                });
+            });
+        }
+
         // ---------------------------------------------------------
         // GALLERY LOGIC
         // ---------------------------------------------------------

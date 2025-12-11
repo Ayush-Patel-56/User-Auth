@@ -5,10 +5,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer-when-downgrade">
     <title>Happening Now - Login (Updated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body class="min-h-screen flex flex-col items-center justify-center relative p-4">
@@ -35,15 +37,12 @@
 
             <div class="flex flex-col gap-3">
 
-                <!-- Google Button (not wired yet) -->
-                <button id="google-btn"
-                    class="flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 px-4 hover:bg-gray-100 apple-button-effect font-medium text-sm sm:text-base">
-                    <i class="fab fa-google"></i>
-                    Sign up with Google
-                </button>
+                <!-- Google Button (Official Render) -->
+                <div id="google-btn-container" class="flex justify-center"></div>
+                <!-- <button id="google-btn" ... (Removed for reliability) -->
 
                 <!-- Apple Button -->
-                <button
+                <button id="apple-btn"
                     class="flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 px-4 hover:bg-gray-100 apple-button-effect font-bold text-sm sm:text-base">
                     <i class="fab fa-apple text-xl"></i>
                     Sign up with Apple

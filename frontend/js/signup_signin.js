@@ -24,6 +24,90 @@ export function initAuth() {
         if (signupCancel) signupCancel.onclick = () => signupModal.classList.add("hidden");
         if (signinCancel) signinCancel.onclick = () => signinModal.classList.add("hidden");
 
+        // Feature Not Available Toast for Apple
+        const appleBtn = document.getElementById("apple-btn");
+        if (appleBtn) {
+            appleBtn.onclick = () => showToast("Sign up with Apple is coming soon!", "info");
+        }
+
+        // -------------------------------------------------------------
+        // GOOGLE AUTH INITIALIZATION
+        // -------------------------------------------------------------
+
+        // Define handleCredentialResponse globally or attach to window
+        window.handleGoogleCredentialResponse = async (response) => {
+            console.log("Encoded JWT ID token: " + response.credential);
+
+            try {
+                // Send to backend
+                const res = await fetch("/api/auth/google/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: response.credential }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Save JWT tokens
+                    localStorage.setItem("access", data.access);
+                    localStorage.setItem("refresh", data.refresh);
+
+                    showToast("Login Successful!", "success");
+
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.assign(window.location.origin + '/dashboard/');
+                    }, 500);
+                } else {
+                    console.error("Google Auth Backend Error:", data);
+                    showToast("Google Login Failed: " + (data.detail || "Unknown error"), "error");
+                }
+            } catch (error) {
+                console.error("Google Auth Network Error:", error);
+                showToast("Network error during Google Login", "error");
+            }
+        }
+
+        const googleBtnContainer = document.getElementById("google-btn-container");
+
+        if (googleBtnContainer) {
+            const initializeGoogle = () => {
+                if (window.google) {
+                    const CLIENT_ID = "715843950550-diqg03nmv5dh756r366q9gq33bpu778p.apps.googleusercontent.com";
+
+                    window.google.accounts.id.initialize({
+                        client_id: CLIENT_ID,
+                        callback: window.handleGoogleCredentialResponse,
+                        use_fedcm_for_prompt: true,
+                        ux_mode: 'popup'
+                    });
+
+                    // Render the official Google Button
+                    window.google.accounts.id.renderButton(
+                        googleBtnContainer,
+                        {
+                            type: "standard",
+                            theme: "outline",
+                            size: "large",
+                            text: "signup_with",
+                            shape: "pill",
+                            width: 250
+                        }
+                    );
+
+                    console.log("Google Auth (Official Button) initialized successfully");
+                } else {
+                    // Retry after 500ms if script is not yet loaded
+                    setTimeout(initializeGoogle, 500);
+                }
+            };
+
+            initializeGoogle();
+        } else {
+            console.error("Google button container not found in DOM");
+        }
+
 
         // -------------------------------------------------------------
         // USERNAME LENGTH VALIDATION

@@ -210,3 +210,73 @@ class PhotoCommentDetailView(generics.DestroyAPIView):
     def get_queryset(self):
         # Only allow deleting own comments
         return PhotoComment.objects.filter(user=self.request.user)
+
+# -------------------------------------------------------------
+# GOOGLE AUTH LOGIN
+# -------------------------------------------------------------
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from django.conf import settings
+from django.contrib.auth import login
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_auth(request):
+    """
+    POST /api/auth/google/
+    Body: { "token": "..." }
+    """
+    token = request.data.get('token')
+    if not token:
+        return Response({"detail": "Token required"}, status=400)
+
+    try:
+        # Verify Token
+        CLIENT_ID = "715843950550-diqg03nmv5dh756r366q9gq33bpu778p.apps.googleusercontent.com"  # Hardcoded for now based on user flow
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), CLIENT_ID)
+
+        # Get User Info
+        email = idinfo['email']
+        name = idinfo.get('name', '')
+        
+        # Check if user exists
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            # Create new user
+            username = email.split('@')[0]
+            # Ensure unique username
+            base_username = username
+            counter = 1
+            while User.objects.filter(username__iexact=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            user = User.objects.create_user(username=username, email=email)
+            user.set_unusable_password() # No password needed for OAuth users
+            user.save()
+            
+            # Create Profile
+            display_name = name if name else username
+            Profile.objects.create(
+                user=user,
+                title=f"{display_name}'s Profile",
+                description=f"Hello this is {display_name}."
+            )
+
+        # Generate JWT
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        return Response({
+            "access": str(access),
+            "refresh": str(refresh),
+            "username": user.username,
+            "email": user.email
+        })
+
+    except ValueError:
+        return Response({"detail": "Invalid Google Token"}, status=400)
+    except Exception as e:
+        print(f"Google Auth Error: {e}")
+        return Response({"detail": "Google Auth Failed"}, status=500)
