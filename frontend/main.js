@@ -2,6 +2,7 @@ import { initAnimations } from './js/animations.js';
 import { initAuth } from './js/signup_signin.js';
 import { initDashboard } from './js/dashboard.js';
 import { initPublicProfile } from './js/public_profile.js';
+import { initCommunity } from './js/community.js'; // Import Community
 
 console.log("Main script loaded");
 
@@ -27,4 +28,9 @@ if (path.includes('/dashboard/')) {
 if (path.includes('/u/')) {
     console.log("Initializing Public Profile...");
     initPublicProfile();
+}
+
+// 5. Initialize Community (Chat Only)
+if (path.includes('/community/')) {
+    initCommunity();
 }

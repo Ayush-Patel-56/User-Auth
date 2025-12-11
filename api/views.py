@@ -300,5 +300,44 @@ def google_auth(request):
     except ValueError:
         return Response({"detail": "Invalid Google Token"}, status=400)
     except Exception as e:
-        print(f"Google Auth Error: {e}")
         return Response({"detail": "Google Auth Failed"}, status=500)
+
+# -------------------------------------------------------------
+# COMMUNITY CHAT
+# -------------------------------------------------------------
+from homepage.models import ChatMessage
+from .serializers import ChatMessageSerializer
+
+class ChatListCreateView(generics.ListCreateAPIView):
+    """
+    GET /api/chat/ -> List last 50 messages
+    POST /api/chat/ -> Post new message
+    """
+    serializer_class = ChatMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Return last 50 messages (ordered by creation)
+        # Note: We slice in python or use logic to get last N
+        return ChatMessage.objects.all().order_by('-created_at')[:50]
+
+    def list(self, request, *args, **kwargs):
+        # We want oldest first for chat flow, so fetch recent desc -> reverse
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(reversed(queryset), many=True)
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class ChatDetailView(generics.DestroyAPIView):
+    """
+    DELETE /api/chat/<id>/
+    """
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Only allow deleting own messages
+        return ChatMessage.objects.filter(user=self.request.user)

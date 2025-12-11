@@ -4,7 +4,28 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 
 
-from homepage.models import Profile, UserPhoto, PhotoLike, PhotoComment
+from homepage.models import Profile, UserPhoto, PhotoLike, PhotoComment, ChatMessage
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    avatar = serializers.SerializerMethodField()
+    is_me = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'username', 'avatar', 'text', 'created_at', 'is_me']
+        read_only_fields = ['id', 'username', 'avatar', 'created_at', 'is_me']
+
+    def get_avatar(self, obj):
+        if hasattr(obj.user, 'profile') and obj.user.profile.avatar:
+            return obj.user.profile.avatar.url
+        return None
+
+    def get_is_me(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.user == request.user
+        return False
 
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)

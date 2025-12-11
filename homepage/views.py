@@ -22,3 +22,6 @@ def public_profile(request, username):
 def dashboard(request):
     return render(request, "homepage/dashboard.html")
 
+def community_view(request):
+    return render(request, "homepage/community.html")
+

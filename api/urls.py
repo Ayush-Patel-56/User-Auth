@@ -4,7 +4,7 @@ from .views import (
     RegisterView, resolve_username, me_view, 
     ProfileDetailView, UserPhotoListCreateView, UserPhotoDetailView,
     toggle_like, PhotoCommentListView, PhotoCommentDetailView,
-    google_auth
+    google_auth, ChatListCreateView, ChatDetailView
 )
 
 urlpatterns = [
@@ -27,4 +27,8 @@ urlpatterns = [
 
     # Google Auth
     path('auth/google/', google_auth, name='google-auth'),
+
+    # Community Chat
+    path('chat/', ChatListCreateView.as_view(), name='api-chat-list'),
+    path('chat/<int:pk>/', ChatDetailView.as_view(), name='api-chat-detail'),
 ]
