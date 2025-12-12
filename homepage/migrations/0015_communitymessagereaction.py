@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('homepage', '0011_messagereaction'),
+        ('homepage', '0014_skill'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

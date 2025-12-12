@@ -28,11 +28,12 @@ class ChatMessageSerializer(serializers.ModelSerializer):
     is_me = serializers.SerializerMethodField()
     community_id = serializers.IntegerField(source='community.id', read_only=True)
     reactions = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatMessage
-        fields = ['id', 'username', 'avatar', 'text', 'created_at', 'is_me', 'community_id', 'reactions']
-        read_only_fields = ['id', 'username', 'avatar', 'created_at', 'is_me', 'community_id', 'reactions']
+        fields = ['id', 'username', 'avatar', 'text', 'created_at', 'is_me', 'community_id', 'reactions', 'is_online']
+        read_only_fields = ['id', 'username', 'avatar', 'created_at', 'is_me', 'community_id', 'reactions', 'is_online']
 
     def get_avatar(self, obj):
         if hasattr(obj.user, 'profile') and obj.user.profile.avatar:
@@ -63,6 +64,13 @@ class ChatMessageSerializer(serializers.ModelSerializer):
             }
             for emoji, users in reaction_groups.items()
         ]
+    
+    def get_is_online(self, obj):
+        from datetime import timedelta
+        from django.utils import timezone
+        if hasattr(obj.user, 'profile') and obj.user.profile.last_activity:
+            return timezone.now() - obj.user.profile.last_activity < timedelta(minutes=5)
+        return False
 
 class CommunitySerializer(serializers.ModelSerializer):
     member_count = serializers.SerializerMethodField()
@@ -178,11 +186,29 @@ class DirectThreadSerializer(serializers.ModelSerializer):
         other = obj.other_user(request.user)
         if not other:
             return None
+        
+        # Safely get profile data
+        display_name = other.username
+        avatar_url = None
+        is_online = False
+        
+        if hasattr(other, 'profile') and other.profile:
+            if hasattr(other.profile, 'display_name'):
+                display_name = other.profile.display_name
+            if other.profile.avatar:
+                avatar_url = other.profile.avatar.url
+            # Check online status (active within 5 minutes)
+            if hasattr(other.profile, 'last_activity') and other.profile.last_activity:
+                from datetime import timedelta
+                from django.utils import timezone
+                is_online = timezone.now() - other.profile.last_activity < timedelta(minutes=5)
+        
         return {
             'username': other.username,
-            'display_name': getattr(other, 'profile', None).display_name if hasattr(other, 'profile') else other.username,
-            'avatar': other.profile.avatar.url if hasattr(other, 'profile') and other.profile.avatar else None,
+            'display_name': display_name,
+            'avatar': avatar_url,
             'profile_url': f'/u/{other.username}/',
+            'is_online': is_online,
         }
 
     def get_last_message(self, obj):

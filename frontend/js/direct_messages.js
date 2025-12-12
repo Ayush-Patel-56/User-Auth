@@ -150,10 +150,9 @@ export function initDirectMessages() {
         }
         headerAvatar.classList.remove('hidden');
 
-        // Show online status (simulated - you can integrate real presence later)
-        // For now, we'll show "active now" for demonstration
+        // Show real online status from backend
         const onlineDotNew = document.getElementById('dm-online-dot');
-        if (Math.random() > 0.5) { // 50% chance to show as online (simulated)
+        if (otherUser.is_online) {
             onlineDotNew.classList.remove('hidden');
             lastSeenEl.textContent = 'Active now';
             lastSeenEl.classList.remove('text-gray-500');

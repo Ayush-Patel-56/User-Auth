@@ -38,6 +38,11 @@ class Profile(models.Model):
         ('N', 'Prefer not to say'),
     ]
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
+    
+    slug = models.SlugField(max_length=100, blank=True)
+    
+    # Activity tracking for online status
+    last_activity = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
