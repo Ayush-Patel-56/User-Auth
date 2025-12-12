@@ -220,6 +220,65 @@
             </div>
         </div>
 
+        <!-- Skills Section -->
+        <div class="glass-card rounded-2xl p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-lightbulb text-[#00b4d8]"></i> Skills
+            </h2>
+
+            <!-- Add Skill Input -->
+            <div class="mb-4">
+                <div class="flex gap-2">
+                    <input type="text" id="skill-input" class="input flex-1"
+                        placeholder="Enter a skill and press Enter">
+                    <button id="add-skill-btn" class="btn-primary">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Suggested Skills -->
+            <div class="mb-6">
+                <p class="text-sm text-gray-400 mb-3 flex items-center gap-2">
+                    <i class="fas fa-star"></i> Quick Add - Popular Skills:
+                </p>
+                <div class="flex flex-wrap gap-2" id="suggested-skills">
+                    <button class="suggested-skill-btn" data-skill="UI/UX Design">
+                        <i class="fas fa-paint-brush"></i> UI/UX Design
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Software Engineering">
+                        <i class="fas fa-code"></i> Software Engineering
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Game Development">
+                        <i class="fas fa-gamepad"></i> Game Development
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Mobile Games">
+                        <i class="fas fa-mobile-alt"></i> Mobile Games
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Video Editor">
+                        <i class="fas fa-video"></i> Video Editor
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Photographer">
+                        <i class="fas fa-camera"></i> Photographer
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Gaming Industry">
+                        <i class="fas fa-trophy"></i> Gaming Industry
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Online Gaming">
+                        <i class="fas fa-wifi"></i> Online Gaming
+                    </button>
+                    <button class="suggested-skill-btn" data-skill="Construction Management">
+                        <i class="fas fa-hard-hat"></i> Construction Management
+                    </button>
+                </div>
+            </div>
+
+            <!-- User's Skills List -->
+            <div id="skills-list" class="flex flex-wrap gap-2">
+                <!-- Skills will be injected here via JS -->
+            </div>
+        </div>
+
         <!-- Gallery Section -->
         <div class="glass-card rounded-2xl p-8">
             <div class="flex justify-between items-center mb-6">

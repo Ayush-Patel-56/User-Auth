@@ -5,6 +5,7 @@ from .views import (
     ProfileDetailView, UserPhotoListCreateView, UserPhotoDetailView,
     EducationListCreateView, EducationDetailView,
     ExperienceListCreateView, ExperienceDetailView,
+    SkillListCreateView, SkillDetailView,
     toggle_like, PhotoCommentListView, PhotoCommentDetailView,
     google_auth,
     ChatListCreateView,
@@ -37,6 +38,10 @@ urlpatterns = [
     # Experience
     path('experience/', ExperienceListCreateView.as_view(), name='api-experience-list'),
     path('experience/<int:pk>/', ExperienceDetailView.as_view(), name='api-experience-detail'),
+
+    # Skills
+    path('skills/', SkillListCreateView.as_view(), name='api-skills-list'),
+    path('skills/<int:pk>/', SkillDetailView.as_view(), name='api-skills-detail'),
 
     # JWT Login + Token Refresh
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

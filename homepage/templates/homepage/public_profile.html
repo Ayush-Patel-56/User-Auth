@@ -96,6 +96,16 @@
             </div>
         </div>
 
+        <!-- Skills Section -->
+        <div id="skills-section" class="glass-card rounded-2xl p-8 mb-8 hidden">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-lightbulb text-[#00b4d8]"></i> Skills
+            </h2>
+            <div id="skills-list-public" class="flex flex-wrap gap-2">
+                <!-- Skills will be injected here via JS -->
+            </div>
+        </div>
+
         <!-- Gallery Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {% for photo in user_obj.photos.all %}

@@ -159,6 +159,47 @@ export function initPublicProfile() {
     // Load experience on page load
     loadExperience();
 
+    // --- Load Skills Data ---
+    async function loadSkills() {
+        // Get username from URL path: /u/username/
+        const pathParts = window.location.pathname.split('/');
+        const username = pathParts[2]; // /u/[username]/
+
+        if (!username) return;
+
+        try {
+            const headers = accessToken ? {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            } : { 'Content-Type': 'application/json' };
+
+            // Just show it if we have access token (viewing own profile)
+            if (!accessToken) return;
+
+            const res = await fetch('/api/skills/', { headers });
+            if (res.ok) {
+                const skills = await res.json();
+                const skillsSection = document.getElementById('skills-section');
+                const skillsListPublic = document.getElementById('skills-list-public');
+
+                if (skills.length > 0) {
+                    skillsSection.classList.remove('hidden');
+
+                    skillsListPublic.innerHTML = skills.map(skill => `
+                        <div class="skill-tag">
+                            ${skill.name}
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading skills:', error);
+        }
+    }
+
+    // Load skills on page load
+    loadSkills();
+
     // --- 1. Load Data (Likes & Comments) ---
     async function loadPhotoData(photoId, isPolling = false) {
         // CRITICAL: Always ensure currentUser is loaded before rendering comments

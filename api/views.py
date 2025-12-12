@@ -99,8 +99,8 @@ def me_view(request):
 # -------------------------------------------------------------
 # PROFILE MANAGEMENT (GET / UPDATE)
 # -------------------------------------------------------------
-from homepage.models import Profile, UserPhoto, Education, Experience
-from .serializers import ProfileSerializer, UserPhotoSerializer, EducationSerializer, ExperienceSerializer
+from homepage.models import Profile, UserPhoto, Education, Experience, Skill
+from .serializers import ProfileSerializer, UserPhotoSerializer, EducationSerializer, ExperienceSerializer, SkillSerializer
 
 class ProfileDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
@@ -191,6 +191,34 @@ class ExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         # Ensure user can only modify their own experience entries
         return Experience.objects.filter(user=self.request.user)
+
+# -------------------------------------------------------------
+# SKILL MANAGEMENT (LIST / CREATE / DELETE)
+# -------------------------------------------------------------
+class SkillListCreateView(generics.ListCreateAPIView):
+    """
+    GET /api/skills/ -> List user's skills
+    POST /api/skills/ -> Add new skill
+    """
+    serializer_class = SkillSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Skill.objects.filter(user=self.request.user).order_by('name')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class SkillDetailView(generics.DestroyAPIView):
+    """
+    DELETE /api/skills/<id>/ -> Delete skill
+    """
+    serializer_class = SkillSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Ensure user can only delete their own skills
+        return Skill.objects.filter(user=self.request.user)
 
 # -------------------------------------------------------------
 # LIKE FEATURE

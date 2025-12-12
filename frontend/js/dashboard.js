@@ -945,10 +945,123 @@ export function initDashboard() {
         };
 
 
+        // -------------------------------------------------------------
+        // SKILLS MANAGEMENT
+        // -------------------------------------------------------------
+        const skillInput = document.getElementById('skill-input');
+        const addSkillBtn = document.getElementById('add-skill-btn');
+        const skillsList = document.getElementById('skills-list');
+        const suggestedSkillBtns = document.querySelectorAll('.suggested-skill-btn');
+
+        // Load Skills
+        async function loadSkills() {
+            try {
+                const res = await authFetch('/api/skills/');
+                if (res.ok) {
+                    const skills = await res.json();
+                    renderSkills(skills);
+                }
+            } catch (error) {
+                console.error('Error loading skills:', error);
+            }
+        }
+
+        // Render Skills as Tags
+        function renderSkills(skills) {
+            if (skills.length === 0) {
+                skillsList.innerHTML = `
+                    <p class="text-gray-400 text-sm">No skills added yet. Enter a skill above or click a suggested skill.</p>
+                `;
+                return;
+            }
+
+            skillsList.innerHTML = skills.map(skill => `
+                <div class="skill-tag">
+                    ${skill.name}
+                    <button onclick="deleteSkill(${skill.id})" title="Remove skill">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Add Skill
+        async function addSkill(skillName) {
+            if (!skillName || !skillName.trim()) return;
+
+            try {
+                const res = await authFetch('/api/skills/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: skillName.trim() })
+                });
+
+                if (res.ok) {
+                    loadSkills();
+                    skillInput.value = '';
+                    showToast('Skill added successfully!', 'success');
+                } else {
+                    const data = await res.json();
+                    if (res.status === 400 && data.name) {
+                        showToast('This skill already exists', 'error');
+                    } else {
+                        showToast(data.detail || 'Failed to add skill', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding skill:', error);
+                showToast('An error occurred', 'error');
+            }
+        }
+
+        // Add Skill from Input Field
+        addSkillBtn.addEventListener('click', () => {
+            addSkill(skillInput.value);
+        });
+
+        // Add Skill on Enter Key
+        skillInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addSkill(skillInput.value);
+            }
+        });
+
+        // Add Skill from Suggested Skills
+        suggestedSkillBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const skillName = btn.getAttribute('data-skill');
+                addSkill(skillName);
+            });
+        });
+
+        // Delete Skill (Global function for onclick)
+        window.deleteSkill = async (id) => {
+            try {
+                const res = await authFetch(`/api/skills/${id}/`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    loadSkills();
+                    showToast('Skill removed successfully!', 'success');
+                } else {
+                    showToast('Failed to remove skill', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting skill:', error);
+                showToast('An error occurred', 'error');
+            }
+        };
+
+
         // Init
         loadProfile();
         loadPhotos();
         loadEducation();
         loadExperience();
+        loadSkills();
     }
 }

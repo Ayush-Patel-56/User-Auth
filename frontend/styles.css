@@ -1,4 +1,4 @@
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+﻿        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
@@ -207,4 +207,79 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        /* ------------------------------------------------------------
+   SKILL TAGS AND BUTTONS
+------------------------------------------------------------- */
+        .skill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: rgba(0, 180, 216, 0.15);
+            border: 1px solid rgba(0, 180, 216, 0.3);
+            border-radius: 20px;
+            color: #00b4d8;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .skill-tag:hover {
+            background: rgba(0, 180, 216, 0.25);
+            border-color: rgba(0, 180, 216, 0.5);
+        }
+
+        .skill-tag button {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            transition: transform 0.2s ease;
+        }
+
+        .skill-tag button:hover {
+            transform: scale(1.2);
+        }
+
+        .suggested-skill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 22px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .suggested-skill-btn i {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .suggested-skill-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 180, 216, 0.2), rgba(0, 180, 216, 0.15));
+            border-color: rgba(0, 180, 216, 0.4);
+            color: #00b4d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
+        }
+
+        .suggested-skill-btn:hover i {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .suggested-skill-btn:active {
+            transform: translateY(0);
         }

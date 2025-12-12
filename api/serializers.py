@@ -16,6 +16,7 @@ from homepage.models import (
     DirectMessage,
     Education,
     Experience,
+    Skill,
     MessageReaction,
 )
 
@@ -212,6 +213,12 @@ class ExperienceSerializer(serializers.ModelSerializer):
             'description', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'employment_type_display', 'created_at', 'updated_at']
+
+class SkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skill
+        fields = ['id', 'name', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 class CommentSerializer(serializers.ModelSerializer):
 

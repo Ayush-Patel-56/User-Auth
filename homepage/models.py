@@ -105,6 +105,18 @@ class Experience(models.Model):
         start = self.start_date.strftime('%Y-%m')
         return f"{self.user.username} - {self.title} at {self.company} ({start} - {end})"
 
+class Skill(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']  # Alphabetical order
+        unique_together = ['user', 'name']  # Prevent duplicate skills for same user
+
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+
 class UserPhoto(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photos')
     image = models.ImageField(upload_to='gallery/')
