@@ -86,6 +86,16 @@
             </div>
         </div>
 
+        <!-- Experience Section -->
+        <div id="experience-section" class="glass-card rounded-2xl p-8 mb-8 hidden">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-briefcase text-[#00b4d8]"></i> Experience
+            </h2>
+            <div id="experience-list-public" class="space-y-4">
+                <!-- Experience entries will be injected here via JS -->
+            </div>
+        </div>
+
         <!-- Gallery Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {% for photo in user_obj.photos.all %}

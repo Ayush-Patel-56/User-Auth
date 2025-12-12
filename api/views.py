@@ -99,8 +99,8 @@ def me_view(request):
 # -------------------------------------------------------------
 # PROFILE MANAGEMENT (GET / UPDATE)
 # -------------------------------------------------------------
-from homepage.models import Profile, UserPhoto, Education
-from .serializers import ProfileSerializer, UserPhotoSerializer, EducationSerializer
+from homepage.models import Profile, UserPhoto, Education, Experience
+from .serializers import ProfileSerializer, UserPhotoSerializer, EducationSerializer, ExperienceSerializer
 
 class ProfileDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
@@ -161,6 +161,36 @@ class EducationDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         # Ensure user can only modify their own education entries
         return Education.objects.filter(user=self.request.user)
+
+# -------------------------------------------------------------
+# EXPERIENCE MANAGEMENT (LIST / CREATE / UPDATE / DELETE)
+# -------------------------------------------------------------
+class ExperienceListCreateView(generics.ListCreateAPIView):
+    """
+    GET /api/experience/ -> List user's experience entries
+    POST /api/experience/ -> Add new experience entry
+    """
+    serializer_class = ExperienceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Experience.objects.filter(user=self.request.user).order_by('-start_date')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class ExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET /api/experience/<id>/ -> Get experience entry
+    PUT /api/experience/<id>/ -> Update experience entry
+    DELETE /api/experience/<id>/ -> Delete experience entry
+    """
+    serializer_class = ExperienceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Ensure user can only modify their own experience entries
+        return Experience.objects.filter(user=self.request.user)
 
 # -------------------------------------------------------------
 # LIKE FEATURE

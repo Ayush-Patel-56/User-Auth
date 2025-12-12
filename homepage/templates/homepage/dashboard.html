@@ -203,6 +203,23 @@
             </div>
         </div>
 
+        <!-- Experience Section -->
+        <div class="glass-card rounded-2xl p-8 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-briefcase text-[#00b4d8]"></i> Experience
+                </h2>
+                <button id="add-experience-btn" class="btn-secondary text-sm">
+                    <i class="fas fa-plus"></i> Add Experience
+                </button>
+            </div>
+
+            <!-- Experience Entries List -->
+            <div id="experience-list" class="space-y-4">
+                <!-- Experience entries will be injected here via JS -->
+            </div>
+        </div>
+
         <!-- Gallery Section -->
         <div class="glass-card rounded-2xl p-8">
             <div class="flex justify-between items-center mb-6">
@@ -308,6 +325,68 @@
                 <div class="flex gap-3">
                     <button type="submit" class="btn-primary flex-1">Save</button>
                     <button type="button" id="education-cancel" class="btn-secondary flex-1">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Experience Modal -->
+    <div id="experience-modal" class="modal hidden">
+        <div class="modal-panel max-w-2xl">
+            <h3 class="text-xl font-bold mb-4" id="experience-modal-title">Add Experience</h3>
+            <form id="experience-form" class="space-y-4">
+                <input type="hidden" id="experience-id" value="">
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Job Title *</label>
+                    <input type="text" id="experience-title" class="input" placeholder="e.g. Software Engineer"
+                        required>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Employment Type *</label>
+                    <select id="experience-employment-type" class="input" required>
+                        <option value="">Select Employment Type</option>
+                        <option value="FULL_TIME">Full-time</option>
+                        <option value="PART_TIME">Part-time</option>
+                        <option value="SELF_EMPLOYED">Self-employed</option>
+                        <option value="FREELANCE">Freelance</option>
+                        <option value="INTERNSHIP">Internship</option>
+                        <option value="TRAINEE">Trainee</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Company or Organization *</label>
+                    <input type="text" id="experience-company" class="input" placeholder="e.g. Google Inc." required>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Location</label>
+                    <input type="text" id="experience-location" class="input" placeholder="e.g. San Francisco, CA">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Start Date *</label>
+                        <input type="month" id="experience-start-date" class="input" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">End Date</label>
+                        <input type="month" id="experience-end-date" class="input"
+                            placeholder="Leave empty for Present">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Description</label>
+                    <textarea id="experience-description" rows="4" class="input"
+                        placeholder="Describe your role and responsibilities..."></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="btn-primary flex-1">Save</button>
+                    <button type="button" id="experience-cancel" class="btn-secondary flex-1">Cancel</button>
                 </div>
             </form>
         </div>

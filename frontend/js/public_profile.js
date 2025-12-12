@@ -101,6 +101,64 @@ export function initPublicProfile() {
     // Load education on page load
     loadEducation();
 
+    // --- Load Experience Data ---
+    async function loadExperience() {
+        // Get username from URL path: /u/username/
+        const pathParts = window.location.pathname.split('/');
+        const username = pathParts[2]; // /u/[username]/
+
+        if (!username) return;
+
+        try {
+            const headers = accessToken ? {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            } : { 'Content-Type': 'application/json' };
+
+            // Just show it if we have access token (viewing own profile)
+            if (!accessToken) return;
+
+            const res = await fetch('/api/experience/', { headers });
+            if (res.ok) {
+                const experiences = await res.json();
+                const experienceSection = document.getElementById('experience-section');
+                const experienceListPublic = document.getElementById('experience-list-public');
+
+                if (experiences.length > 0) {
+                    experienceSection.classList.remove('hidden');
+
+                    // Helper function to format dates
+                    const formatDate = (dateString) => {
+                        if (!dateString) return 'Present';
+                        const date = new Date(dateString + '-01');
+                        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                    };
+
+                    experienceListPublic.innerHTML = experiences.map(exp => `
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="font-bold text-lg text-white">${exp.title}</h3>
+                            <p class="text-sm text-cyan-400 mb-1">${exp.company}</p>
+                            <p class="text-xs text-gray-400 mb-2">
+                                <span class="bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">${exp.employment_type_display}</span>
+                            </p>
+                            ${exp.location ? `<p class="text-sm text-gray-400 mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${exp.location}</p>` : ''}
+                            <p class="text-sm text-gray-500">
+                                <i class="fas fa-calendar mr-1"></i>
+                                ${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}
+                            </p>
+                            ${exp.description ? `<p class="mt-3 text-sm text-gray-300 leading-relaxed">${exp.description}</p>` : ''}
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading experience:', error);
+        }
+    }
+
+    // Load experience on page load
+    loadExperience();
+
     // --- 1. Load Data (Likes & Comments) ---
     async function loadPhotoData(photoId, isPolling = false) {
         // CRITICAL: Always ensure currentUser is loaded before rendering comments

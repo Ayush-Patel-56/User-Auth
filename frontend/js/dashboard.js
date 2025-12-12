@@ -765,9 +765,190 @@ export function initDashboard() {
         };
 
 
+        // -------------------------------------------------------------
+        // EXPERIENCE MANAGEMENT
+        // -------------------------------------------------------------
+        const experienceList = document.getElementById('experience-list');
+        const experienceModal = document.getElementById('experience-modal');
+        const experienceForm = document.getElementById('experience-form');
+        const experienceIdInput = document.getElementById('experience-id');
+        const experienceTitleInput = document.getElementById('experience-title');
+        const experienceEmploymentTypeInput = document.getElementById('experience-employment-type');
+        const experienceCompanyInput = document.getElementById('experience-company');
+        const experienceLocationInput = document.getElementById('experience-location');
+        const experienceStartDateInput = document.getElementById('experience-start-date');
+        const experienceEndDateInput = document.getElementById('experience-end-date');
+        const experienceDescriptionInput = document.getElementById('experience-description');
+        const experienceModalTitle = document.getElementById('experience-modal-title');
+
+        // Open Add Experience Modal
+        document.getElementById('add-experience-btn').addEventListener('click', () => {
+            experienceForm.reset();
+            experienceIdInput.value = '';
+            experienceModalTitle.textContent = 'Add Experience';
+            experienceModal.classList.remove('hidden');
+        });
+
+        // Close Experience Modal
+        document.getElementById('experience-cancel').addEventListener('click', () => {
+            experienceModal.classList.add('hidden');
+        });
+
+        // Helper function to format dates
+        function formatDate(dateString) {
+            if (!dateString) return 'Present';
+            const date = new Date(dateString + '-01'); // Add day to make valid date
+            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+
+        // Load Experience Entries
+        async function loadExperience() {
+            try {
+                const res = await authFetch('/api/experience/');
+                if (res.ok) {
+                    const experiences = await res.json();
+
+                    if (experiences.length === 0) {
+                        experienceList.innerHTML = `
+                            <div class="text-center py-8 text-gray-400">
+                                <i class="fas fa-briefcase text-4xl mb-3 opacity-50"></i>
+                                <p>No experience entries yet. Click "Add Experience" to add one.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    experienceList.innerHTML = experiences.map(exp => `
+                        <div class="glass-card p-6 rounded-xl hover:bg-white/5 transition">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg text-white">${exp.title}</h3>
+                                    <p class="text-sm text-cyan-400 mb-1">${exp.company}</p>
+                                    <p class="text-xs text-gray-400 mb-2">
+                                        <span class="bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">${exp.employment_type_display}</span>
+                                    </p>
+                                    ${exp.location ? `<p class="text-sm text-gray-400 mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${exp.location}</p>` : ''}
+                                    <p class="text-sm text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        ${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}
+                                    </p>
+                                    ${exp.description ? `<p class="mt-3 text-sm text-gray-300 leading-relaxed">${exp.description}</p>` : ''}
+                                </div>
+                                <div class="flex gap-2 ml-4">
+                                    <button onclick="editExperience(${exp.id})" class="text-blue-400 hover:text-blue-300 transition">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteExperience(${exp.id})" class="text-red-400 hover:text-red-300 transition">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading experience:', error);
+            }
+        }
+
+        // Save Experience Entry (Create or Update)
+        experienceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true);
+
+            const payload = {
+                title: experienceTitleInput.value.trim(),
+                employment_type: experienceEmploymentTypeInput.value,
+                company: experienceCompanyInput.value.trim(),
+                location: experienceLocationInput.value.trim(),
+                start_date: experienceStartDateInput.value + '-01', // Add day for full date
+                end_date: experienceEndDateInput.value ? experienceEndDateInput.value + '-01' : null,
+                description: experienceDescriptionInput.value.trim()
+            };
+
+            const experienceId = experienceIdInput.value;
+            const method = experienceId ? 'PUT' : 'POST';
+            const url = experienceId ? `/api/experience/${experienceId}/` : '/api/experience/';
+
+            try {
+                const res = await authFetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    experienceModal.classList.add('hidden');
+                    loadExperience();
+                    showToast(`Experience ${experienceId ? 'updated' : 'added'} successfully!`, 'success');
+                } else {
+                    const data = await res.json();
+                    showToast(data.detail || 'Failed to save experience', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving experience:', error);
+                showToast('An error occurred', 'error');
+            } finally {
+                setButtonLoading(submitBtn, false);
+            }
+        });
+
+        // Edit Experience Entry (Global function for onclick)
+        window.editExperience = async (id) => {
+            try {
+                const res = await authFetch(`/api/experience/${id}/`);
+                if (res.ok) {
+                    const exp = await res.json();
+
+                    experienceIdInput.value = exp.id;
+                    experienceTitleInput.value = exp.title;
+                    experienceEmploymentTypeInput.value = exp.employment_type;
+                    experienceCompanyInput.value = exp.company;
+                    experienceLocationInput.value = exp.location || '';
+                    // Remove the day part for month input
+                    experienceStartDateInput.value = exp.start_date.substring(0, 7);
+                    experienceEndDateInput.value = exp.end_date ? exp.end_date.substring(0, 7) : '';
+                    experienceDescriptionInput.value = exp.description || '';
+
+                    experienceModalTitle.textContent = 'Edit Experience';
+                    experienceModal.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading experience:', error);
+                showToast('Failed to load experience data', 'error');
+            }
+        };
+
+        // Delete Experience Entry (Global function for onclick)
+        window.deleteExperience = async (id) => {
+            if (!confirm('Are you sure you want to delete this experience entry?')) return;
+
+            try {
+                const res = await authFetch(`/api/experience/${id}/`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    loadExperience();
+                    showToast('Experience deleted successfully!', 'success');
+                } else {
+                    showToast('Failed to delete experience', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting experience:', error);
+                showToast('An error occurred', 'error');
+            }
+        };
+
+
         // Init
         loadProfile();
         loadPhotos();
         loadEducation();
+        loadExperience();
     }
 }

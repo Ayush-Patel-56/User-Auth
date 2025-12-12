@@ -76,6 +76,35 @@ class Education(models.Model):
         end = self.end_year if self.end_year else "Present"
         return f"{self.user.username} - {self.organization} ({self.start_year}-{end})"
 
+class Experience(models.Model):
+    EMPLOYMENT_TYPES = [
+        ('FULL_TIME', 'Full-time'),
+        ('PART_TIME', 'Part-time'),
+        ('SELF_EMPLOYED', 'Self-employed'),
+        ('FREELANCE', 'Freelance'),
+        ('INTERNSHIP', 'Internship'),
+        ('TRAINEE', 'Trainee'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
+    title = models.CharField(max_length=200)  # Job title/position
+    employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPES)
+    company = models.CharField(max_length=200)  # Company or organization
+    location = models.CharField(max_length=200, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)  # null means "Present"
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date']  # Most recent first
+
+    def __str__(self):
+        end = self.end_date.strftime('%Y-%m') if self.end_date else "Present"
+        start = self.start_date.strftime('%Y-%m')
+        return f"{self.user.username} - {self.title} at {self.company} ({start} - {end})"
+
 class UserPhoto(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photos')
     image = models.ImageField(upload_to='gallery/')

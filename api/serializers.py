@@ -15,6 +15,7 @@ from homepage.models import (
     Conversation,
     DirectMessage,
     Education,
+    Experience,
     MessageReaction,
 )
 
@@ -199,6 +200,18 @@ class EducationSerializer(serializers.ModelSerializer):
         model = Education
         fields = ['id', 'organization', 'location', 'start_year', 'end_year', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+class ExperienceSerializer(serializers.ModelSerializer):
+    employment_type_display = serializers.CharField(source='get_employment_type_display', read_only=True)
+    
+    class Meta:
+        model = Experience
+        fields = [
+            'id', 'title', 'employment_type', 'employment_type_display', 
+            'company', 'location', 'start_date', 'end_date', 
+            'description', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'employment_type_display', 'created_at', 'updated_at']
 
 class CommentSerializer(serializers.ModelSerializer):
 
