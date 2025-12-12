@@ -84,6 +84,7 @@ export function initDirectMessages() {
     const emojiBtn = document.getElementById('dm-emoji-btn');
 
     let selectedThreadId = null;
+    let isHoveringReactionMenu = false; // Track if user is hovering over reaction menu
     let selectedOtherUser = null;
     let pollTimer = null;
     let searchTimer = null;
@@ -341,6 +342,10 @@ export function initDirectMessages() {
     }
 
     function renderMessages(messages) {
+        // Don't re-render if user is actively hovering over reaction menu
+        if (isHoveringReactionMenu) {
+            return;
+        }
         messagesEl.innerHTML = '';
 
         if (!messages || messages.length === 0) {
@@ -372,7 +377,7 @@ export function initDirectMessages() {
 
             // Quick reactions menu (WhatsApp style)
             const quickReactions = `
-                <div class="absolute -top-8 ${isMe ? 'right-0' : 'left-0'} bg-gray-800/95 backdrop-blur-md rounded-full px-2 py-1 hidden group-hover:flex items-center gap-1 shadow-lg border border-white/10 z-10">
+                <div class="quick-reaction-menu absolute -top-8 ${isMe ? 'right-0' : 'left-0'} bg-gray-800/95 backdrop-blur-md rounded-full px-2 py-1 hidden group-hover:flex items-center gap-1 shadow-lg border border-white/10 z-10">
                     ${QUICK_EMOJIS.map(emoji => `
                         <button class="quick-react-btn text-lg hover:scale-125 transition" data-msg-id="${msg.id}" data-emoji="${emoji}">${emoji}</button>
                     `).join('')}
@@ -412,6 +417,16 @@ export function initDirectMessages() {
             `;
 
             messagesEl.appendChild(div);
+        });
+
+        // Track hover state on reaction menus to prevent re-render interruption
+        messagesEl.querySelectorAll('.quick-reaction-menu').forEach(menu => {
+            menu.addEventListener('mouseenter', () => {
+                isHoveringReactionMenu = true;
+            });
+            menu.addEventListener('mouseleave', () => {
+                isHoveringReactionMenu = false;
+            });
         });
 
         // Add event listeners for quick reactions
