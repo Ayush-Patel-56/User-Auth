@@ -101,7 +101,7 @@ export function initPublicProfile() {
     }
 
     function updateLikeUI(isLiked, count) {
-        likeCount.textContent = `${count} likes`;
+        likeCount.textContent = `${count} Aura`;
         likeBtn.dataset.liked = isLiked ? "true" : "false";
         if (isLiked) {
             likeBtn.innerHTML = '<i class="fas fa-infinity"></i>'; // Active
