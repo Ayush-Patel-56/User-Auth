@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Direct Messages</title>
+    <title>Messages</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
@@ -21,7 +21,7 @@
     <nav
         class="fixed top-0 w-full z-50 glass-card border-b border-white/10 px-6 py-4 flex justify-between items-center shrink-0">
         <div class="flex items-center gap-4 min-w-0">
-            <div class="font-bold text-xl tracking-tight whitespace-nowrap">Direct Messages</div>
+            <div class="font-bold text-xl tracking-tight whitespace-nowrap">Messages</div>
         </div>
         <div class="flex items-center gap-3">
             <a href="/community/" class="btn-secondary text-sm" target="_blank">
@@ -76,19 +76,14 @@
                         <!-- Name + Status -->
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2">
-                                <span id="dm-title" class="font-bold text-lg text-white truncate">Select a
-                                    conversation</span>
+                                <a id="dm-title" href="#" target="_blank"
+                                    class="font-bold text-lg text-white truncate hover:underline hover:text-cyan-400 transition cursor-pointer">Select
+                                    a
+                                    conversation</a>
                             </div>
                             <div id="dm-last-seen" class="text-xs text-gray-500 hidden">Last seen recently</div>
                         </div>
                     </div>
-
-                    <!-- View Profile Link -->
-                    <a id="dm-profile-link" href="#" target="_blank"
-                        class="text-sm text-cyan-400 hover:text-cyan-300 transition hidden flex items-center gap-1.5 shrink-0">
-                        <i class="fas fa-user-circle"></i>
-                        <span class="hidden md:inline">Profile</span>
-                    </a>
                 </div>
 
                 <div id="dm-messages"

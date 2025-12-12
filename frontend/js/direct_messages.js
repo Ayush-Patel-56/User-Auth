@@ -73,7 +73,6 @@ export function initDirectMessages() {
     const threadsEl = document.getElementById('dm-threads');
     const messagesEl = document.getElementById('dm-messages');
     const titleEl = document.getElementById('dm-title');
-    const profileLinkEl = document.getElementById('dm-profile-link');
 
     const formEl = document.getElementById('dm-form');
     const inputEl = document.getElementById('dm-input');
@@ -122,16 +121,23 @@ export function initDirectMessages() {
         if (!otherUser) {
             // No conversation selected - reset to default state
             titleEl.textContent = 'Select a conversation';
+            titleEl.href = '#';
+            titleEl.removeAttribute('target');
+            titleEl.classList.remove('cursor-pointer', 'hover:underline', 'hover:text-cyan-400');
+            titleEl.classList.add('cursor-default');
+
             headerAvatar.classList.add('hidden');
             onlineDot.classList.add('hidden');
             lastSeenEl.classList.add('hidden');
-            profileLinkEl.classList.add('hidden');
-            profileLinkEl.href = '#';
             return;
         }
 
-        // Update title
+        // Update header info
         titleEl.textContent = otherUser.display_name || otherUser.username;
+        titleEl.href = otherUser.profile_url || (`/u/${otherUser.username}/`);
+        titleEl.setAttribute('target', '_blank');
+        titleEl.classList.add('cursor-pointer', 'hover:underline', 'hover:text-cyan-400');
+        titleEl.classList.remove('cursor-default');
 
         // Update and show avatar
         const firstLetter = (otherUser.username?.[0] || '?').toUpperCase();
@@ -164,10 +170,6 @@ export function initDirectMessages() {
             lastSeenEl.classList.add('text-gray-500');
         }
         lastSeenEl.classList.remove('hidden');
-
-        // Update profile link
-        profileLinkEl.href = otherUser.profile_url || (`/u/${otherUser.username}/`);
-        profileLinkEl.classList.remove('hidden');
     }
 
     function renderThreads(threads) {
@@ -476,10 +478,11 @@ export function initDirectMessages() {
     }
 
     async function deleteMessage(e) {
-        if (!confirm('Delete this message?')) return;
+        // Removed validation alert as requested
         const id = e.currentTarget.getAttribute('data-id');
         const res = await authFetch(`/api/dm/messages/${id}/`, { method: 'DELETE' });
         if (res.ok) {
+            showToast('Message deleted', 'success');
             await loadMessages();
             await loadThreads(false);
         }
