@@ -351,3 +351,31 @@ class ChatDetailView(generics.DestroyAPIView):
     def get_queryset(self):
         # Only allow deleting own messages
         return ChatMessage.objects.filter(user=self.request.user)
+
+# -------------------------------------------------------------
+# USER SEARCH
+# -------------------------------------------------------------
+from .serializers import UserSearchSerializer
+
+class UserSearchView(generics.ListAPIView):
+    """
+    GET /api/search/users/?q=<query>
+    Search for users by username (partial, case-insensitive)
+    """
+    serializer_class = UserSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '').strip()
+        
+        if not query or len(query) < 2:
+            return User.objects.none()
+        
+        # Search by username (case-insensitive, partial match)
+        # Exclude current user from results
+        return User.objects.filter(
+            username__icontains=query
+        ).exclude(
+            id=self.request.user.id
+        ).select_related('profile')[:10]  # Limit to 10 results
+

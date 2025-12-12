@@ -74,6 +74,25 @@ class UserPhotoSerializer(serializers.ModelSerializer):
     def get_like_count(self, obj):
         return obj.likes.count()
 
+class UserSearchSerializer(serializers.ModelSerializer):
+    """Minimal serializer for user search results"""
+    display_name = serializers.CharField(source='profile.display_name', read_only=True)
+    avatar = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['username', 'display_name', 'avatar', 'profile_url']
+        read_only_fields = ['username', 'display_name', 'avatar', 'profile_url']
+
+    def get_avatar(self, obj):
+        if hasattr(obj, 'profile') and obj.profile.avatar:
+            return obj.profile.avatar.url
+        return None
+
+    def get_profile_url(self, obj):
+        return f'/u/{obj.username}/'
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)

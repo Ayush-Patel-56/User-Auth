@@ -498,6 +498,115 @@ export function initDashboard() {
             showToast('Photo deleted successfully!', 'success');
         };
 
+
+        // -------------------------------------------------------------
+        // USER SEARCH (Desktop + Mobile)
+        // -------------------------------------------------------------
+        const searchInput = document.getElementById('user-search-input');
+        const searchDropdown = document.getElementById('search-dropdown');
+        const searchInputMobile = document.getElementById('user-search-input-mobile');
+        const searchDropdownMobile = document.getElementById('search-dropdown-mobile');
+        let searchTimeout = null;
+
+        async function performSearch(query, dropdownElement) {
+            if (!query || query.trim().length < 2) {
+                if (dropdownElement) dropdownElement.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await authFetch(`/api/search/users/?q=${encodeURIComponent(query.trim())}`);
+                if (!response.ok) throw new Error();
+
+                const users = await response.json();
+                renderSearchResults(users, dropdownElement);
+            } catch (err) {
+                console.error('Search failed:', err);
+                if (dropdownElement) dropdownElement.classList.add('hidden');
+            }
+        }
+
+        function renderSearchResults(users, dropdownElement) {
+            if (!dropdownElement) return;
+
+            if (users.length === 0) {
+                dropdownElement.innerHTML = `
+                    <div class="px-4 py-6 text-center text-gray-500 text-sm">
+                        <i class="fas fa-user-slash mb-2 text-2xl"></i>
+                        <p>No users found</p>
+                    </div>
+                `;
+                dropdownElement.classList.remove('hidden');
+                return;
+            }
+
+            dropdownElement.innerHTML = users.map(user => `
+                <div class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition user-result" data-url="${user.profile_url}">
+                    <!-- Avatar (32px circle) -->
+                    <div class="w-8 h-8 rounded-full bg-gray-700 overflow-hidden border border-white/20 shrink-0">
+                        ${user.avatar
+                    ? `<img src="${user.avatar}" class="w-full h-full object-cover" alt="${user.username}">`
+                    : `<div class="w-full h-full bg-purple-500 flex items-center justify-center text-xs font-bold text-white">${user.username[0].toUpperCase()}</div>`
+                }
+                    </div>
+                    
+                    <!-- Names -->
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-white text-sm truncate">${user.display_name}</div>
+                        <div class="text-gray-500 text-xs truncate">@${user.username}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click listeners to results
+            dropdownElement.querySelectorAll('.user-result').forEach(result => {
+                result.addEventListener('click', (e) => {
+                    const url = e.currentTarget.getAttribute('data-url');
+                    window.open(url, '_blank');
+                });
+            });
+
+            dropdownElement.classList.remove('hidden');
+        }
+
+        function setupSearchInput(inputElement, dropdownElement) {
+            if (!inputElement || !dropdownElement) return;
+
+            // Debounced search input
+            inputElement.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value;
+
+                if (query.trim().length < 2) {
+                    dropdownElement.classList.add('hidden');
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    performSearch(query, dropdownElement);
+                }, 300); // 300ms debounce
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', (e) => {
+                if (!inputElement.contains(e.target) && !dropdownElement.contains(e.target)) {
+                    dropdownElement.classList.add('hidden');
+                }
+            });
+
+            // Re-search on focus if there's existing text
+            inputElement.addEventListener('focus', (e) => {
+                if (e.target.value.trim().length >= 2) {
+                    performSearch(e.target.value, dropdownElement);
+                }
+            });
+        }
+
+        // Setup both desktop and mobile search
+        setupSearchInput(searchInput, searchDropdown);
+        setupSearchInput(searchInputMobile, searchDropdownMobile);
+
+
         // Init
         loadProfile();
         loadPhotos();
