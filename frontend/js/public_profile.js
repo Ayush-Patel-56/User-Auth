@@ -51,6 +51,12 @@ export function initPublicProfile() {
 
     // --- 1. Load Data (Likes & Comments) ---
     async function loadPhotoData(photoId, isPolling = false) {
+        // CRITICAL: Always ensure currentUser is loaded before rendering comments
+        // This is needed for delete button visibility logic
+        if (accessToken && !currentUser) {
+            await fetchCurrentUser();
+        }
+
         if (!isPolling) {
             // First load: Show loading state
             currentPhotoId = photoId;
@@ -59,11 +65,6 @@ export function initPublicProfile() {
             likeBtn.innerHTML = '<i class="fas fa-infinity"></i>';
             likeBtn.style.color = ''; // Reset
             likeBtn.dataset.liked = "false";
-
-            // Ensure currentUser is loaded before checks
-            if (accessToken && !currentUser) {
-                await fetchCurrentUser();
-            }
         }
 
         try {
@@ -127,11 +128,16 @@ export function initPublicProfile() {
         const isProfileOwner = currentUsername === profileOwnerUsername;
         const isOwner = currentUsername && (isAuthor || isProfileOwner);
 
+        // Debug logging for delete button visibility
+        if (!isOwner && currentUsername) {
+            console.log(`Delete button hidden for comment ${comment.id}: currentUser=${currentUsername}, commentAuthor=${comment.username}, profileOwner=${profileOwnerUsername}`);
+        }
+
         const deleteBtn = isOwner
             ? `<button class="delete-comment-btn absolute right-0 top-0 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-2" data-id="${comment.id}"><i class="fas fa-trash"></i></button>`
             : '';
 
-        const replyBtn = (accessToken && !isNested)
+        const replyBtn = accessToken
             ? `<button class="reply-comment-btn text-xs text-gray-400 hover:text-white mt-1" data-id="${comment.id}" data-username="${comment.username}">Reply</button>`
             : '';
 
@@ -175,13 +181,20 @@ export function initPublicProfile() {
         const scrollPos = container ? container.scrollTop : 0;
         const wasAtBottom = container ? (container.scrollHeight - container.scrollTop === container.clientHeight) : false;
 
-        commentsList.innerHTML = '';
+        let newHTML = '';
         if (comments.length === 0) {
-            commentsList.innerHTML = '<p class="text-xs text-gray-600 text-center py-4">No comments yet. Be the first!</p>';
+            newHTML = '<p class="text-xs text-gray-600 text-center py-4">No comments yet. Be the first!</p>';
+        } else {
+            newHTML = comments.map(c => createCommentHTML(c)).join('');
+        }
+
+        // OPTIMIZATION: Don't re-render if content hasn't changed
+        // This prevents "flash" and keeps event listeners stable unless data actually changed
+        if (commentsList.innerHTML === newHTML) {
             return;
         }
 
-        commentsList.innerHTML = comments.map(c => createCommentHTML(c)).join('');
+        commentsList.innerHTML = newHTML;
 
         // Listeners
         document.querySelectorAll('.delete-comment-btn').forEach(btn => {
@@ -211,6 +224,33 @@ export function initPublicProfile() {
 
         // Add visual indicator (optional)
         postCommentBtn.textContent = 'Reply';
+        console.log(`startReply called: replyingToId=${replyingToId}, replyingToUser=${replyingToUser}`);
+    }
+
+    // Delete Comment Implementation
+    async function handleDeleteComment(e) {
+        if (!confirm("Are you sure you want to delete this comment?")) return;
+
+        const commentId = e.currentTarget.getAttribute('data-id');
+        if (!commentId || !accessToken) return;
+
+        try {
+            const res = await fetch(`/api/comments/${commentId}/`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+
+            if (res.ok) {
+                // Refresh comments to reflect deletion
+                loadPhotoData(currentPhotoId, true);
+            } else {
+                console.error("Failed to delete comment");
+                alert("Failed to delete comment. You might not have permission.");
+            }
+        } catch (err) {
+            console.error("Error deleting comment:", err);
+            alert("An error occurred while deleting.");
+        }
     }
 
     // Like Toggle (unchanged)
@@ -318,12 +358,15 @@ export function initPublicProfile() {
                     loadPhotoData(photoId, false); // Initial Load
 
                     // Start Polling
+                    if (pollingInterval) clearInterval(pollingInterval);
                     pollingInterval = setInterval(() => {
                         // Check if still open and visible
                         const isOpen = currentPhotoId && !document.getElementById('lightbox-modal').classList.contains('hidden');
 
                         // Check if user is interacting (replying or typing)
                         const isInteracting = replyingToId !== null || (commentInput && commentInput.value.trim().length > 0);
+
+                        console.log(`Polling: isOpen=${isOpen}, isInteracting=${isInteracting}, replyingToId=${replyingToId}`);
 
                         if (isOpen && !isInteracting) {
                             loadPhotoData(currentPhotoId, true);
