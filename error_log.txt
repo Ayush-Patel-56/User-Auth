@@ -1,84 +1,252 @@
+﻿python : C:\Users\hritu\AppData\Roaming\Python\Py
+thon314\site-packages\rest_framework_simplejwt\__
+init__.py:1: UserWarning: pkg_resources is 
+deprecated as an API. See https://setuptools.pypa
+.io/en/latest/pkg_resources.html. The 
+pkg_resources package is slated for removal as 
+early as 2025-11-30. Refrain from using this 
+package or pin to Setuptools<81.
+At line:1 char:1
++ python manage.py runserver --noreload 2>&1 | 
+Out-File -FilePath error ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\ 
+   Users\hritu\... Setuptools<81.:String) [], R  
+  emoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  from pkg_resources import 
+DistributionNotFound, get_distribution
 Performing system checks...
 
-System check identified no issues (0 silenced).
 Traceback (most recent call last):
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\servers\basehttp.py", line 49, in get_internal_wsgi_application
-    return import_string(app_path)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\utils\module_loading.py", line 30, in import_string
-    return cached_import(module_path, class_name)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\utils\module_loading.py", line 15, in cached_import
-    module = import_module(module_path)
-  File "C:\Python313\Lib\importlib\__init__.py", line 88, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
-  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\core\wsgi.py", line 16, in <module>
-    application = get_wsgi_application()
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\wsgi.py", line 13, in get_wsgi_application
-    return WSGIHandler()
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\handlers\wsgi.py", line 118, in __init__
-    self.load_middleware()
-    ~~~~~~~~~~~~~~~~~~~~^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\handlers\base.py", line 41, in load_middleware
-    middleware = import_string(middleware_path)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\utils\module_loading.py", line 30, in import_string
-    return cached_import(module_path, class_name)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\utils\module_loading.py", line 15, in cached_import
-    module = import_module(module_path)
-  File "C:\Python313\Lib\importlib\__init__.py", line 88, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
-ModuleNotFoundError: No module named 'whitenoise'
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\checks\urls.py",
+ line 136, in check_custom_error_handlers
+    handler = 
+resolver.resolve_error_handler(status_code)
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\urls\resolvers.py", 
+line 743, in resolve_error_handler
+    callback = getattr(self.urlconf_module, 
+"handler%s" % view_type, None)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\utils\functional.py",
+ line 47, in __get__
+    res = instance.__dict__[self.name] = 
+self.func(instance)
+                                         
+~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\urls\resolvers.py", 
+line 722, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Python314\Lib\importlib\__init__.py", 
+line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], 
+package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 
+1398, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 
+1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 
+1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 
+938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", 
+line 762, in exec_module
+  File "<frozen importlib._bootstrap>", line 
+491, in _call_with_frames_removed
+  File 
+"C:\Launch\mini_homepage_builder\core\urls.py", 
+line 8, in <module>
+    path('api/', include('api.urls')),
+                 ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\urls\conf.py", line 
+39, in include
+    urlconf_module = 
+import_module(urlconf_module)
+  File "C:\Python314\Lib\importlib\__init__.py", 
+line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], 
+package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 
+1398, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 
+1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 
+1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 
+938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", 
+line 762, in exec_module
+  File "<frozen importlib._bootstrap>", line 
+491, in _call_with_frames_removed
+  File 
+"C:\Launch\mini_homepage_builder\api\urls.py", 
+line 3, in <module>
+    from .views import (
+    ...<15 lines>...
+    )
+  File 
+"C:\Launch\mini_homepage_builder\api\views.py", 
+line 321, in <module>
+    from homepage.models import (
+    ...<2 lines>...
+    )
+ImportError: cannot import name 'Photo' from 
+'homepage.models' (C:\Launch\mini_homepage_builde
+r\homepage\models.py)
 
-The above exception was the direct cause of the following exception:
+During handling of the above exception, another 
+exception occurred:
 
 Traceback (most recent call last):
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\manage.py", line 22, in <module>
+  File 
+"C:\Launch\mini_homepage_builder\manage.py", 
+line 22, in <module>
     main()
     ~~~~^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\manage.py", line 18, in main
+  File 
+"C:\Launch\mini_homepage_builder\manage.py", 
+line 18, in main
     execute_from_command_line(sys.argv)
     ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\__init__.py", line 443, in execute_from_command_line
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\__ini
+t__.py", line 443, in execute_from_command_line
     utility.execute()
     ~~~~~~~~~~~~~~~^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\__init__.py", line 437, in execute
-    self.fetch_command(subcommand).run_from_argv(self.argv)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\base.py", line 416, in run_from_argv
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\__ini
+t__.py", line 437, in execute
+    self.fetch_command(subcommand).run_from_argv(
+self.argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\base.
+py", line 416, in run_from_argv
     self.execute(*args, **cmd_options)
     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\commands\runserver.py", line 69, in execute
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\comma
+nds\runserver.py", line 69, in execute
     super().execute(*args, **options)
     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\base.py", line 460, in execute
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\base.
+py", line 460, in execute
     output = self.handle(*args, **options)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\commands\runserver.py", line 110, in handle
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\comma
+nds\runserver.py", line 110, in handle
     self.run(**options)
     ~~~~~~~~^^^^^^^^^^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\commands\runserver.py", line 119, in run
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\comma
+nds\runserver.py", line 119, in run
     self.inner_run(None, **options)
     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\commands\runserver.py", line 143, in inner_run
-    handler = self.get_handler(*args, **options)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\contrib\staticfiles\management\commands\runserver.py", line 31, in get_handler
-    handler = super().get_handler(*args, **options)
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\management\commands\runserver.py", line 73, in get_handler
-    return get_internal_wsgi_application()
-  File "E:\OneDrive\Desktop\User Auth & Profiles\User-Auth\.venv\Lib\site-packages\django\core\servers\basehttp.py", line 51, in get_internal_wsgi_application
-    raise ImproperlyConfigured(
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\comma
+nds\runserver.py", line 134, in inner_run
+    self.check(**check_kwargs)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\management\base.
+py", line 492, in check
+    all_issues = checks.run_checks(
+        app_configs=app_configs,
     ...<2 lines>...
-    ) from err
-django.core.exceptions.ImproperlyConfigured: WSGI application 'core.wsgi.application' could not be loaded; Error importing module.
+        databases=databases,
+    )
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\checks\registry.
+py", line 89, in run_checks
+    new_errors = check(app_configs=app_configs, 
+databases=databases)
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\core\checks\urls.py",
+ line 138, in check_custom_error_handlers
+    path = getattr(resolver.urlconf_module, 
+"handler%s" % status_code)
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\utils\functional.py",
+ line 47, in __get__
+    res = instance.__dict__[self.name] = 
+self.func(instance)
+                                         
+~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\urls\resolvers.py", 
+line 722, in urlconf_module
+    return import_module(self.urlconf_name)
+  File "C:\Python314\Lib\importlib\__init__.py", 
+line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], 
+package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 
+1398, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 
+1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 
+1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 
+938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", 
+line 762, in exec_module
+  File "<frozen importlib._bootstrap>", line 
+491, in _call_with_frames_removed
+  File 
+"C:\Launch\mini_homepage_builder\core\urls.py", 
+line 8, in <module>
+    path('api/', include('api.urls')),
+                 ~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\hritu\AppData\Roaming\Python\Pyt
+hon314\site-packages\django\urls\conf.py", line 
+39, in include
+    urlconf_module = 
+import_module(urlconf_module)
+  File "C:\Python314\Lib\importlib\__init__.py", 
+line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], 
+package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 
+1398, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 
+1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 
+1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 
+938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", 
+line 762, in exec_module
+  File "<frozen importlib._bootstrap>", line 
+491, in _call_with_frames_removed
+  File 
+"C:\Launch\mini_homepage_builder\api\urls.py", 
+line 3, in <module>
+    from .views import (
+    ...<15 lines>...
+    )
+  File 
+"C:\Launch\mini_homepage_builder\api\views.py", 
+line 321, in <module>
+    from homepage.models import (
+    ...<2 lines>...
+    )
+ImportError: cannot import name 'Photo' from 
+'homepage.models' (C:\Launch\mini_homepage_builde
+r\homepage\models.py)

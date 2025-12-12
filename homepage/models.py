@@ -194,3 +194,19 @@ class DirectMessage(models.Model):
 
     def __str__(self):
         return f"[DM {self.conversation_id}] {self.sender.username}: {self.text[:20]}"
+
+
+class MessageReaction(models.Model):
+    """Emoji reactions on direct messages (WhatsApp-style)"""
+    message = models.ForeignKey(DirectMessage, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dm_reactions')
+    emoji = models.CharField(max_length=10)  # Unicode emoji character
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        # One user can only have ONE reaction per message (can change emoji, but only one at a time)
+        unique_together = [['message', 'user']]
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} {self.emoji} on DM {self.message_id}"

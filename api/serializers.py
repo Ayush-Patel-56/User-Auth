@@ -14,6 +14,7 @@ from homepage.models import (
     CommunityMembership,
     Conversation,
     DirectMessage,
+    MessageReaction,
 )
 
 class ChatMessageSerializer(serializers.ModelSerializer):
@@ -82,15 +83,25 @@ class CommunityMemberSerializer(serializers.ModelSerializer):
         return None
 
 
+class MessageReactionSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = MessageReaction
+        fields = ['id', 'emoji', 'username', 'created_at']
+        read_only_fields = ['id', 'username', 'created_at']
+
+
 class DirectMessageSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='sender.username', read_only=True)
     avatar = serializers.SerializerMethodField()
     is_me = serializers.SerializerMethodField()
+    reactions = serializers.SerializerMethodField()
 
     class Meta:
         model = DirectMessage
-        fields = ['id', 'username', 'avatar', 'text', 'created_at', 'is_me']
-        read_only_fields = ['id', 'username', 'avatar', 'created_at', 'is_me']
+        fields = ['id', 'text', 'username', 'avatar', 'created_at', 'is_me', 'reactions']
+        read_only_fields = ['id', 'username', 'avatar', 'created_at', 'is_me', 'reactions']
 
     def get_avatar(self, obj):
         if hasattr(obj.sender, 'profile') and obj.sender.profile.avatar:
@@ -102,21 +113,44 @@ class DirectMessageSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.sender == request.user
         return False
+    
+    def get_reactions(self, obj):
+        """Group reactions by emoji with list of users"""
+        from collections import defaultdict
+        reaction_groups = defaultdict(list)
+        
+        for reaction in obj.reactions.all():
+            reaction_groups[reaction.emoji].append({
+                'username': reaction.user.username,
+                'is_me': reaction.user == self.context.get('request').user if self.context.get('request') else False
+            })
+        
+        # Convert to list format
+        return [
+            {
+                'emoji': emoji,
+                'count': len(users),
+                'users': users
+            }
+            for emoji, users in reaction_groups.items()
+        ]
 
 
 class DirectThreadSerializer(serializers.ModelSerializer):
     other_user = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Conversation
-        fields = ['id', 'other_user', 'updated_at', 'last_message']
-        read_only_fields = ['id', 'other_user', 'updated_at', 'last_message']
+        fields = ['id', 'other_user', 'last_message', 'unread_count', 'updated_at', 'created_at']
+        read_only_fields = ['id', 'updated_at', 'created_at']
 
     def get_other_user(self, obj):
         request = self.context.get('request')
-        me = request.user if request and request.user.is_authenticated else None
-        other = obj.other_user(me) if me else None
+        if not request:
+            return None
+        other = obj.other_user(request.user)
         if not other:
             return None
         return {
@@ -135,6 +169,19 @@ class DirectThreadSerializer(serializers.ModelSerializer):
             'created_at': last.created_at,
             'username': last.sender.username,
         }
+    
+    def get_unread_count(self, obj):
+        """Count unread messages in this conversation for the current user."""
+        request = self.context.get('request')
+        if not request or not request.user:
+            return 0
+        
+        # Count messages sent by other user that haven't been read
+        return obj.messages.filter(
+            is_read=False
+        ).exclude(
+            sender=request.user
+        ).count()
 
 
 class ProfileSerializer(serializers.ModelSerializer):
