@@ -16,6 +16,7 @@ from .views import (
     DirectThreadListCreateView,
     DirectMessageListCreateView,
     DirectMessageDetailView,
+    message_reaction_view,
 )
 
 urlpatterns = [
@@ -57,6 +58,7 @@ urlpatterns = [
     path('dm/threads/', DirectThreadListCreateView.as_view(), name='api-dm-threads'),
     path('dm/threads/<int:thread_id>/messages/', DirectMessageListCreateView.as_view(), name='api-dm-thread-messages'),
     path('dm/messages/<int:pk>/', DirectMessageDetailView.as_view(), name='api-dm-message-delete'),
+    path('dm/messages/<int:message_id>/react/', message_reaction_view, name='api-dm-message-react'), # Added message reaction URL
 
     # User Search
     path('search/users/', UserSearchView.as_view(), name='api-user-search'),

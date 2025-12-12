@@ -1,5 +1,72 @@
 import { authFetch, showToast } from './utils.js';
 
+// Utility: Format message timestamp with relative time
+function formatMessageTime(createdAt) {
+    const now = new Date();
+    const msgDate = new Date(createdAt);
+    const diffMs = now - msgDate;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    // Just now
+    if (diffMins < 1) return 'Just now';
+
+    // Minutes ago
+    if (diffMins < 60) return `${diffMins}m ago`;
+
+    // Hours ago (today)
+    if (diffHours < 24 && now.toDateString() === msgDate.toDateString()) {
+        return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (msgDate.toDateString() === yesterday.toDateString()) {
+        return `Yesterday ${msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    // Older: show date + time
+    return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
+        ' ' + msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Utility: Format relative time for thread list (shorter format)
+function formatRelativeTime(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+// WhatsApp-style emoji set for quick reactions
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const ALL_EMOJIS = [
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂',
+    '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛',
+    '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥳', '😏', '😒',
+    '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫', '😩', '🥺',
+    '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶',
+    '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥',
+    '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲',
+    '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧',
+    '👍', '👎', '👏', '🙌', '👐', '🤝', '🙏', '✌️', '🤞', '🤟',
+    '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👌', '🤏', '👊',
+    '✊', '🤛', '🤜', '🤚', '👋', '🤟', '✋', '🖐', '🖖', '💪',
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔',
+    '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '🔥', '⭐',
+    '✨', '💫', '💥', '💯', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇'
+];
+
 export function initDirectMessages() {
     if (!window.location.pathname.includes('/messages/')) return;
 
@@ -14,6 +81,7 @@ export function initDirectMessages() {
 
     const userSearchInput = document.getElementById('dm-user-search-input');
     const userSearchResults = document.getElementById('dm-user-search-results');
+    const emojiBtn = document.getElementById('dm-emoji-btn');
 
     let selectedThreadId = null;
     let selectedOtherUser = null;
@@ -41,17 +109,63 @@ export function initDirectMessages() {
     function setComposerEnabled(enabled) {
         inputEl.disabled = !enabled;
         sendBtnEl.disabled = !enabled;
+        emojiBtn.disabled = !enabled;
         if (!enabled) inputEl.value = '';
     }
 
     function setHeader(otherUser) {
+        const headerAvatar = document.getElementById('dm-header-avatar');
+        const onlineDot = document.getElementById('dm-online-dot');
+        const lastSeenEl = document.getElementById('dm-last-seen');
+
         if (!otherUser) {
+            // No conversation selected - reset to default state
             titleEl.textContent = 'Select a conversation';
+            headerAvatar.classList.add('hidden');
+            onlineDot.classList.add('hidden');
+            lastSeenEl.classList.add('hidden');
             profileLinkEl.classList.add('hidden');
             profileLinkEl.href = '#';
             return;
         }
+
+        // Update title
         titleEl.textContent = otherUser.display_name || otherUser.username;
+
+        // Update and show avatar
+        const firstLetter = (otherUser.username?.[0] || '?').toUpperCase();
+        if (otherUser.avatar) {
+            headerAvatar.innerHTML = `
+                <img src="${otherUser.avatar}" class="w-full h-full object-cover" alt="${otherUser.username}">
+                <div id="dm-online-dot" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900 hidden"></div>
+            `;
+        } else {
+            headerAvatar.innerHTML = `
+                <div class="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+                    ${firstLetter}
+                </div>
+                <div id="dm-online-dot" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900 hidden"></div>
+            `;
+        }
+        headerAvatar.classList.remove('hidden');
+
+        // Show online status (simulated - you can integrate real presence later)
+        // For now, we'll show "active now" for demonstration
+        const onlineDotNew = document.getElementById('dm-online-dot');
+        if (Math.random() > 0.5) { // 50% chance to show as online (simulated)
+            onlineDotNew.classList.remove('hidden');
+            lastSeenEl.textContent = 'Active now';
+            lastSeenEl.classList.remove('text-gray-500');
+            lastSeenEl.classList.add('text-green-400');
+        } else {
+            onlineDotNew.classList.add('hidden');
+            lastSeenEl.textContent = 'Last seen recently';
+            lastSeenEl.classList.remove('text-green-400');
+            lastSeenEl.classList.add('text-gray-500');
+        }
+        lastSeenEl.classList.remove('hidden');
+
+        // Update profile link
         profileLinkEl.href = otherUser.profile_url || (`/u/${otherUser.username}/`);
         profileLinkEl.classList.remove('hidden');
     }
@@ -65,19 +179,37 @@ export function initDirectMessages() {
         threadsEl.innerHTML = threads.map(t => {
             const other = t.other_user;
             const isSelected = t.id === selectedThreadId;
+
+            // Unread handling (simulated if not provided by API)
+            const unreadCount = t.unread_count || 0;
+            const hasUnread = unreadCount > 0;
             const avatar = other && other.avatar
                 ? `<img src="${other.avatar}" class="w-full h-full object-cover" />`
                 : `<div class="w-full h-full bg-purple-500 flex items-center justify-center text-xs font-bold text-white">${(other?.username?.[0] || '?').toUpperCase()}</div>`;
 
             const lastText = t.last_message?.text ? t.last_message.text : 'No messages yet';
+            const timestamp = t.updated_at ? formatRelativeTime(t.updated_at) : '';
 
             return `
-                <button class="dm-thread w-full text-left px-3 py-3 rounded-2xl border transition ${isSelected ? 'bg-white/10 border-cyan-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}" data-id="${t.id}">
+                <button class="dm-thread w-full text-left px-3 py-3 rounded-2xl border transition relative
+                    ${isSelected ? 'bg-white/10 border-cyan-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}
+                    ${hasUnread ? 'border-l-4 border-l-cyan-400' : ''}" 
+                    data-id="${t.id}">
+                    ${hasUnread ? '<div class="absolute top-2 right-2 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>' : ''}
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0">${avatar}</div>
+                        <div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0 relative">
+                            ${avatar}
+                            ${hasUnread ? '<div class="absolute inset-0 ring-2 ring-cyan-400/50 rounded-full"></div>' : ''}
+                        </div>
                         <div class="min-w-0 flex-1">
-                            <div class="text-sm font-bold truncate">${other?.display_name || other?.username || 'Unknown'}</div>
-                            <div class="text-xs text-gray-500 truncate">${lastText}</div>
+                            <div class="flex items-center justify-between gap-2 mb-0.5">
+                                <div class="text-sm font-bold truncate ${hasUnread ? 'text-white' : 'text-gray-300'}">${other?.display_name || other?.username || 'Unknown'}</div>
+                                ${timestamp ? `<div class="text-[10px] text-gray-500 whitespace-nowrap">${timestamp}</div>` : ''}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-xs ${hasUnread ? 'text-gray-300 font-medium' : 'text-gray-500'} truncate flex-1">${lastText}</div>
+                                ${unreadCount > 0 ? `<span class="text-[10px] bg-cyan-500 text-white px-2 py-0.5 rounded-full font-bold shrink-0">${unreadCount}</span>` : ''}
+                            </div>
                         </div>
                         <i class="fas fa-chevron-right text-xs text-gray-600"></i>
                     </div>
@@ -134,6 +266,80 @@ export function initDirectMessages() {
         }
     }
 
+    // =============================================
+    // EMOJI PICKER
+    // =============================================
+    function showEmojiPicker() {
+        // Remove existing picker
+        document.getElementById('emoji-picker')?.remove();
+
+        const picker = document.createElement('div');
+        picker.id = 'emoji-picker';
+        picker.className = 'fixed bottom-24 left-6 z-50 glass-card rounded-2xl p-4 border border-white/10 shadow-2xl w-80 max-h-96 overflow-y-auto custom-scrollbar';
+        picker.innerHTML = `
+            <div class="grid grid-cols-8 gap-2">
+                ${ALL_EMOJIS.map(emoji => `
+                    <button class="emoji-btn text-2xl hover:scale-125 transition p-1" data-emoji="${emoji}">${emoji}</button>
+                `).join('')}
+            </div>
+        `;
+
+        document.body.appendChild(picker);
+
+        // Add click handlers
+        picker.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const emoji = btn.getAttribute('data-emoji');
+                inputEl.value += emoji;
+                inputEl.focus();
+                picker.remove();
+            });
+        });
+
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', function closePicker(e) {
+                if (!picker.contains(e.target) && e.target !== emojiBtn) {
+                    picker.remove();
+                    document.removeEventListener('click', closePicker);
+                }
+            });
+        }, 100);
+    }
+
+    emojiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showEmojiPicker();
+    });
+
+    // =============================================
+    // MESSAGE REACTIONS
+    // =============================================
+    async function addReaction(messageId, emoji) {
+        const res = await authFetch(`/api/dm/messages/${messageId}/react/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emoji })
+        });
+
+        if (res.ok) {
+            await loadMessages();
+        }
+    }
+
+    async function removeReaction(messageId, emoji) {
+        const res = await authFetch(`/api/dm/messages/${messageId}/react/`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emoji })
+        });
+
+        if (res.ok) {
+            await loadMessages();
+        }
+    }
+
     function renderMessages(messages) {
         messagesEl.innerHTML = '';
 
@@ -145,14 +351,14 @@ export function initDirectMessages() {
         messages.forEach(msg => {
             const isMe = msg.is_me;
             const div = document.createElement('div');
-            div.className = `flex gap-3 mb-4 ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+            div.className = `flex gap-3 mb-4 ${isMe ? 'flex-row-reverse' : 'flex-row'} group`;
 
             const avatarHtml = `
                 <div class="w-8 h-8 rounded-full bg-gray-700 overflow-hidden border border-white/20 shrink-0 mt-1">
                     ${msg.avatar
-                        ? `<img src="${msg.avatar}" class="w-full h-full object-cover">`
-                        : `<div class="w-full h-full bg-purple-500 flex items-center justify-center text-[10px] font-bold">${msg.username[0].toUpperCase()}</div>`
-                    }
+                    ? `<img src="${msg.avatar}" class="w-full h-full object-cover">`
+                    : `<div class="w-full h-full bg-purple-500 flex items-center justify-center text-[10px] font-bold">${msg.username[0].toUpperCase()}</div>`
+                }
                 </div>
             `;
 
@@ -164,19 +370,75 @@ export function initDirectMessages() {
                 ? `<button class="dm-delete-msg text-xs text-red-400 hover:text-red-300 ml-2 opacity-50 hover:opacity-100 transition" data-id="${msg.id}"><i class="fas fa-trash"></i></button>`
                 : '';
 
+            // Quick reactions menu (WhatsApp style)
+            const quickReactions = `
+                <div class="absolute -top-8 ${isMe ? 'right-0' : 'left-0'} bg-gray-800/95 backdrop-blur-md rounded-full px-2 py-1 hidden group-hover:flex items-center gap-1 shadow-lg border border-white/10 z-10">
+                    ${QUICK_EMOJIS.map(emoji => `
+                        <button class="quick-react-btn text-lg hover:scale-125 transition" data-msg-id="${msg.id}" data-emoji="${emoji}">${emoji}</button>
+                    `).join('')}
+                </div>
+            `;
+
+            // Render existing reactions
+            const reactionsHtml = msg.reactions && msg.reactions.length > 0 ? `
+                <div class="flex flex-wrap gap-1 mt-1">
+                    ${msg.reactions.map(r => {
+                const hasUserReacted = r.users.some(u => u.is_me);
+                return `
+                            <button class="reaction-bubble px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition
+                                ${hasUserReacted ? 'bg-cyan-500/30 border border-cyan-400/50' : 'bg-white/10 border border-white/20'}
+                                hover:scale-105" 
+                                data-msg-id="${msg.id}" data-emoji="${r.emoji}">
+                                <span>${r.emoji}</span>
+                                <span class="font-bold">${r.count}</span>
+                            </button>
+                        `;
+            }).join('')}
+                </div>
+            ` : '';
+
             div.innerHTML = `
                 ${avatarHtml}
-                <div class="flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}">
+                <div class="flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'} relative">
+                    ${quickReactions}
                     <div class="flex items-center gap-2 mb-1 px-1">
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">${msg.username}</span>
                         ${deleteBtn}
                     </div>
                     <div class="${bubbleClass} px-4 py-2 shadow-sm break-words text-sm leading-relaxed">${msg.text}</div>
-                    <span class="text-[9px] text-gray-500 mt-1 px-1">${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="text-[9px] text-gray-500 mt-1 px-1">${formatMessageTime(msg.created_at)}</span>
+                    ${reactionsHtml}
                 </div>
             `;
 
             messagesEl.appendChild(div);
+        });
+
+        // Add event listeners for quick reactions
+        messagesEl.querySelectorAll('.quick-react-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const msgId = btn.getAttribute('data-msg-id');
+                const emoji = btn.getAttribute('data-emoji');
+                await addReaction(msgId, emoji);
+            });
+        });
+
+        // Add event listeners for reaction bubbles (click to remove)
+        messagesEl.querySelectorAll('.reaction-bubble').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const msgId = btn.getAttribute('data-msg-id');
+                const emoji = btn.getAttribute('data-emoji');
+                const reaction = messages.find(m => m.id == msgId)?.reactions.find(r => r.emoji === emoji);
+                const hasUserReacted = reaction?.users.some(u => u.is_me);
+
+                if (hasUserReacted) {
+                    await removeReaction(msgId, emoji);
+                } else {
+                    await addReaction(msgId, emoji);
+                }
+            });
         });
 
         messagesEl.querySelectorAll('.dm-delete-msg').forEach(btn => {
@@ -317,9 +579,14 @@ export function initDirectMessages() {
 
     async function startPolling() {
         if (pollTimer) clearInterval(pollTimer);
-        pollTimer = setInterval(() => {
-            if (selectedThreadId) loadMessages();
-        }, 3000);
+        pollTimer = setInterval(async () => {
+            // Refresh messages in current conversation
+            if (selectedThreadId) {
+                await loadMessages();
+            }
+            // Also refresh thread list to update unread counts
+            await loadThreads(false);
+        }, 1000); // 1 second for near real-time updates
     }
 
     (async () => {
@@ -333,3 +600,4 @@ export function initDirectMessages() {
         await startPolling();
     })();
 }
+

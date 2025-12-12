@@ -348,7 +348,10 @@ def google_auth(request):
 # -------------------------------------------------------------
 from django.db.models import Count, Q
 
-from homepage.models import ChatMessage, Community, CommunityMembership, Conversation, DirectMessage
+from homepage.models import (
+    ChatMessage,
+    Community, CommunityMembership, Conversation, DirectMessage, MessageReaction
+)
 from .serializers import (
     ChatMessageSerializer,
     CommunitySerializer,
@@ -634,6 +637,15 @@ class DirectMessageListCreateView(generics.ListCreateAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        
+        # Mark all unread messages from other users as read
+        thread = self._get_thread()
+        thread.messages.filter(
+            is_read=False
+        ).exclude(
+            sender=request.user
+        ).update(is_read=True)
+        
         serializer = self.get_serializer(reversed(queryset), many=True)
         return Response(serializer.data)
 
@@ -657,3 +669,58 @@ class DirectMessageDetailView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return DirectMessage.objects.filter(sender=self.request.user)
+
+
+# -------------------------------------------------------------
+# MESSAGE REACTIONS
+# -------------------------------------------------------------
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def message_reaction_view(request, message_id):
+    """
+    POST   /api/dm/messages/<id>/react/ -> Add/update reaction
+    DELETE /api/dm/messages/<id>/react/ -> Remove reaction
+    """
+    message = get_object_or_404(DirectMessage, pk=message_id)
+    
+    # Check if user is a participant in this conversation
+    if not message.conversation.participants.filter(pk=request.user.pk).exists():
+        raise PermissionDenied('You are not a participant in this conversation.')
+    
+    if request.method == 'POST':
+        emoji = request.data.get('emoji', '').strip()
+        if not emoji:
+            return Response({'detail': 'emoji is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Delete any existing reaction from this user on this message (to enforce one reaction per user)
+        MessageReaction.objects.filter(
+            message=message,
+            user=request.user
+        ).delete()
+        
+        # Create the new reaction
+        reaction = MessageReaction.objects.create(
+            message=message,
+            user=request.user,
+            emoji=emoji
+        )
+        
+        return Response({
+            'emoji': emoji,
+            'created': True
+        }, status=status.HTTP_201_CREATED)
+    
+    elif request.method == 'DELETE':
+        emoji = request.data.get('emoji', '').strip()
+        if not emoji:
+            return Response({'detail': 'emoji is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        deleted = MessageReaction.objects.filter(
+            message=message,
+            user=request.user,
+            emoji=emoji
+        ).delete()[0]
+        
+        return Response({
+            'deleted': deleted > 0
+        }, status=status.HTTP_200_OK)
