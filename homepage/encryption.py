@@ -17,8 +17,14 @@ class MessageEncryption:
             key = key.strip().strip("'").strip('"')
             
         if not key:
+            print("DEBUG: MESSAGE_ENCRYPTION_KEY is missing/empty")
             raise ValueError("MESSAGE_ENCRYPTION_KEY not set in environment")
-        return Fernet(key.encode())
+            
+        try:
+            return Fernet(key.encode())
+        except Exception as e:
+            print(f"DEBUG: Encryption key error. Key length: {len(key)}. Error: {e}")
+            raise
     
     @staticmethod
     def encrypt(plaintext):
