@@ -12,6 +12,10 @@ class MessageEncryption:
     def get_cipher():
         """Get Fernet cipher instance using the encryption key from settings."""
         key = settings.MESSAGE_ENCRYPTION_KEY
+        if key:
+            # Clean the key of whitespace and surrounding quotes
+            key = key.strip().strip("'").strip('"')
+            
         if not key:
             raise ValueError("MESSAGE_ENCRYPTION_KEY not set in environment")
         return Fernet(key.encode())
