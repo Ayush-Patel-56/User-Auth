@@ -10,10 +10,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <style>
-        /* Force Agora Video to fit within container without stretching */
+        /* Ensure Agora Video fits within container */
         #video-remote-container video {
             object-fit: contain !important;
-            position: relative !important;
         }
     </style>
 </head>
@@ -107,97 +106,71 @@
                     </button>
                 </div>
 
-                <!-- Video Call Modal (Safe Layout) -->
-                <div id="call-modal" class="fixed inset-0 z-50 bg-black hidden flex-col">
+                <!-- Video Call Modal (Unified Safe Layout) -->
+                <div id="call-modal"
+                    class="fixed inset-0 z-[9999] bg-black hidden flex flex-col items-center justify-center p-0 md:p-4">
 
-                    <!-- Mobile Layout Structure -->
-                    <div class="flex flex-col h-full w-full md:hidden">
+                    <!-- Unified Content Wrapper -->
+                    <!-- Mobile: Flex Column (Order based). Desktop: Relative Block (Absolute positioning). -->
+                    <div id="modal-content"
+                        class="flex flex-col w-full h-full md:block md:relative md:w-full md:max-w-6xl md:aspect-video md:bg-gray-900 md:rounded-2xl md:overflow-hidden md:border md:border-white/10 md:shadow-2xl">
 
-                        <!-- Top Bar (Local Video & Status) -->
-                        <div class="h-24 bg-black flex justify-between items-start p-4 shrink-0 relative z-20">
-                            <div class="flex items-center gap-2 mt-2">
-                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                <span id="call-status-text-mobile"
-                                    class="text-white font-medium text-sm">Connecting...</span>
-                            </div>
-                            <!-- Local Video (PiP in Header) -->
-                            <div id="video-local-container-mobile"
-                                class="w-20 h-28 bg-gray-800 rounded-lg border border-white/20 overflow-hidden shadow-lg">
-                            </div>
-                        </div>
-
-                        <!-- Main Video Area (Remote) - No Stretch -->
-                        <div class="flex-1 bg-black relative flex items-center justify-center overflow-hidden">
-                            <div id="video-remote-container-mobile"
-                                class="w-full h-full flex items-center justify-center">
-                                <!-- Placeholder -->
-                                <div class="text-center text-gray-500">
-                                    <div
-                                        class="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                        <i class="fas fa-user-circle text-4xl opacity-50"></i>
-                                    </div>
-                                    <p class="text-white/50 text-sm">Waiting for video...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bottom Controls (Static Bar) -->
+                        <!-- 1. STATUS (Absolute Top Left - Works in both modes) -->
                         <div
-                            class="h-24 bg-black shrink-0 flex items-center justify-center gap-8 border-t border-white/10 z-20">
+                            class="absolute top-5 left-4 z-40 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <!-- JS updates this text -->
+                            <div id="call-status" class="text-white text-xs font-medium">Connecting...</div>
+                            <!-- Shim for Mobile Status JS if needed -->
+                            <span id="call-status-text-mobile" class="hidden"></span>
+                        </div>
+
+                        <!-- 2. LOCAL VIDEO -->
+                        <!-- Mobile: Top of Flex Column (Order 1). Desktop: Absolute Bottom Right (Overlay). -->
+                        <div id="video-local-container"
+                            class="order-1 w-full h-28 bg-black shrink-0 flex justify-end items-center p-4 md:absolute md:bottom-6 md:right-6 md:w-56 md:h-40 md:bg-gray-800 md:rounded-xl md:border md:border-white/20 md:shadow-2xl md:z-30 md:p-0 md:block overflow-hidden transition-all duration-300">
+                            <!-- Local video plays here -->
+                        </div>
+
+                        <!-- 3. REMOTE VIDEO -->
+                        <!-- Mobile: Middle of Flex Column (Order 2). Desktop: Full Background (Absolute Inset). -->
+                        <div id="video-remote-container"
+                            class="order-2 flex-1 w-full bg-black relative md:absolute md:inset-0 md:z-10 flex items-center justify-center">
+                            <!-- Placeholder -->
+                            <div class="flex flex-col items-center justify-center text-gray-500">
+                                <div
+                                    class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-3 animate-pulse">
+                                    <i class="fas fa-user-circle text-4xl opacity-50"></i>
+                                </div>
+                                <p class="text-white/50 text-sm font-medium animate-pulse">Waiting for user...</p>
+                            </div>
+                        </div>
+
+                        <!-- 4. CONTROLS -->
+                        <!-- Mobile: Bottom of Flex Column (Order 3). Desktop: Bottom Center Overlay. -->
+                        <div id="call-controls"
+                            class="order-3 h-28 w-full bg-black shrink-0 flex items-center justify-center gap-8 border-t border-white/10 md:absolute md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:w-auto md:h-auto md:bg-black/60 md:backdrop-blur-md md:p-3 md:rounded-full md:border md:border-white/10 md:z-30 md:border-t-0 bg-gradient-to-t from-black/20 to-transparent">
+
                             <!-- Mic -->
-                            <button id="btn-toggle-mic-mobile"
-                                class="w-14 h-14 rounded-full bg-gray-800 text-white flex items-center justify-center active:scale-95 border border-white/10">
+                            <button id="btn-toggle-mic"
+                                class="w-14 h-14 md:w-12 md:h-12 rounded-full bg-gray-800 md:bg-white/10 text-white flex items-center justify-center border border-white/10 md:border-0 hover:bg-white/20 active:scale-95 transition">
                                 <i class="fas fa-microphone text-xl"></i>
                             </button>
+
                             <!-- End Call -->
-                            <button id="btn-end-call-mobile"
-                                class="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center active:scale-95 shadow-lg shadow-red-500/30">
-                                <i class="fas fa-phone-slash text-2xl"></i>
+                            <button id="btn-end-call"
+                                class="w-16 h-16 md:w-14 md:h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-500/30 active:scale-95 transition transform hover:scale-105">
+                                <i class="fas fa-phone-slash text-2xl md:text-xl"></i>
                             </button>
+
                             <!-- Camera -->
-                            <button id="btn-toggle-cam-mobile"
-                                class="w-14 h-14 rounded-full bg-gray-800 text-white flex items-center justify-center active:scale-95 border border-white/10">
+                            <button id="btn-toggle-cam"
+                                class="w-14 h-14 md:w-12 md:h-12 rounded-full bg-gray-800 md:bg-white/10 text-white flex items-center justify-center border border-white/10 md:border-0 hover:bg-white/20 active:scale-95 transition">
                                 <i class="fas fa-video text-xl"></i>
                             </button>
                         </div>
+
                     </div>
-
-
-                    <!-- DESKTOP LAYOUT (Hidden on Mobile) -->
-                    <div class="hidden md:flex flex-col items-center justify-center h-full w-full p-4 relative">
-
-                        <div
-                            class="relative w-full max-w-5xl aspect-video bg-gray-900 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-                            <!-- Remote Video -->
-                            <div id="video-remote-container-desktop" class="w-full h-full"></div>
-
-                            <!-- Local Video (PiP) -->
-                            <div id="video-local-container-desktop"
-                                class="absolute bottom-6 right-6 w-56 h-40 bg-gray-800 rounded-xl border border-white/20 shadow-2xl overflow-hidden z-20">
-                            </div>
-
-                            <!-- Controls (Overlay) -->
-                            <div
-                                class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 bg-black/60 backdrop-blur-md p-3 rounded-full border border-white/10 z-20">
-                                <button id="btn-toggle-mic-desktop"
-                                    class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
-                                    <i class="fas fa-microphone"></i>
-                                </button>
-                                <button id="btn-end-call-desktop"
-                                    class="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition">
-                                    <i class="fas fa-phone-slash"></i>
-                                </button>
-                                <button id="btn-toggle-cam-desktop"
-                                    class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
-                                    <i class="fas fa-video"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="call-status-desktop" class="mt-4 text-white font-medium opacity-70">Connecting...</div>
-                    </div>
-
-
                 </div>
 
                 <!-- Load Agora SDK (before our script) -->
@@ -241,186 +214,6 @@
 
     <!-- Main Script -->
     <script type="module" src="{% static 'main.js' %}"></script>
+</body>
 
-    <!-- Hidden Elements for Logic Hookup (Duplicate IDs logic handled in JS) -->
-    <!-- We need to update JS to handle multiple IDs or use unified IDs and move them around? -->
-    <!-- Better: JS should look for One ID. We will swap the IDs based on viewport? No, that's hard. -->
-    <!-- We will use ONE set of IDs in JS: 'video-remote-container', 'video-local-container', etc. -->
-    <!-- But we have two layouts in DOM. -->
-    <!-- Solution: Use the SAME element but CSS media queries? No, structure is different. -->
-    <!-- Solution: 
-         We will give them DISTINCT IDs: '...-mobile' and '...-desktop'.
-         And update JS to attach tracks to BOTH or the VISIBLE one.
-         Tracks can only be played in ONE element at a time usually.
-         
-         Actually, simpler: JS checks `window.innerWidth`. If mobile, use mobile container. If desktop, use desktop.
-         Resize listener?
-         
-         Or: Use ONE container and CSS Grid/Flex to move it around?
-         That's the "Responsive" way.
-         Let's try to make ONE structure that adapts.
-         
-         STRUCTURE:
-         <div id="call-modal" class="flex flex-col md:block ...">
-            
-            <div id="top-bar-mobile" class="md:hidden ...">...</div>
-            
-            <div id="main-video-area" class="relative flex-1 md:w-full md:aspect-video ...">
-                <div id="video-remote-container" class="..."></div>
-                
-                <div id="video-local-container" class="absolute top-4 right-4 md:bottom-6 md:right-6 ..."></div>
-                
-                <div id="controls-desktop" class="hidden md:flex absolute bottom-6 ...">...</div>
-            </div>
-            
-            <div id="controls-mobile" class="md:hidden h-24 ...">...</div>
-
-         </div>
-         
-         This is cleaner. One "video-remote-container". One "video-local-container".
-         
-         Mobile:
-         - call-modal: flex flex-col padding-0.
-         - top-bar-mobile (Status): Visible.
-         - main-video-area: flex-1, relative.
-           - video-remote-container: inset-0 absolute.
-           - video-local-container: Move into top-bar? No, if it's in main area, it overlaps.
-             User wants NO OVERLAP.
-             So video-local-container MUST be in top-bar-mobile on mobile.
-             
-         Problem: You can't easily move DOM elements with CSS only.
-         
-         So I will use TWO containers for Local Video? And JS renders to one?
-         Or `appendChild` in JS on resize? Too complex.
-         
-         Wait, what if Local Video IS absolute, but on Mobile, the Remote Video sits LOWER?
-         If main-video-area is Flex Column?
-         
-         Let's stick to the "Two Layouts" approach (Mobile vs Desktop Blocks) but with Shared ID?
-         No, ID must be unique.
-         
-         I will use `class="video-remote-container"` and `querySelectorAll`?
-         Agora SDK `play(elementID)` takes ID.
-         
-         Okay, I will update JS to `play` on the visible container.
-         OR: I will force One Layout that works for both via CSS.
-         
-         Layout for "No Overlap on Mobile":
-         Main Remote Video is `static` in a flex column.
-         
-         Mobile:
-         [ Header (Status) ]
-         [ Local Video (Right Aligned in Strip) ] -> Maybe header and local video share a strip?
-         [ Remote Video (Flex-1) ] -> Black bars top/bottom if aspect ratio mismatch.
-         [ Controls (Bottom Strip) ]
-         
-         Desktop:
-         [ Remote Video (Centered Box) ]
-           [ Local Video (Overlay) ]
-           [ Controls (Overlay) ]
-           
-         This requires different nesting.
-         
-         I will go with the **Duplicate Structure with Unique IDs** and update JS to handle it.
-           `id="video-remote-container-mobile"`
-           `id="video-remote-container-desktop"`
-           
-         And `CallManager` will check which is Displayed (`offsetParent !== null`) and play there?
-         Or just play in both? Agora might complain (or detach from first).
-         
-         Actually, simpler: **Use JS to move the element.**
-         `this.localContainer` ...
-         On constructor, or `showModal`:
-         if (mobile) { move containers to mobile slots } else { move to desktop slots }
-         
-         Let's try CSS Grid Area named layout?
-         
-         Actually, I will try to make ONE single layout `video-remote-container` and `video-local-container` work.
-         
-         Mobile:
-           - Container: Flex-Col.
-           - Local Video: Order 1 (Top). H-150px.
-           - Remote Video: Order 2 (Middle). Flex-1.
-           - Controls: Order 3 (Bottom). H-100px.
-           
-         Desktop:
-           - Container: Block/Relative.
-           - Remote Video: H-full W-full.
-           - Local Video: Absolute Bottom-Right.
-           - Controls: Absolute Bottom-Center.
-           
-         This is achievable with utility classes!
-         
-         `video-local-container`:
-         Mobile: `relative w-auto h-32 bg-black flex justify-end p-2`.
-         Desktop: `absolute bottom-6 right-6 w-56 h-40 ...`
-         
-         `video-remote-container`:
-         Mobile: `flex-1 w-full`.
-         Desktop: `w-full h-full`.
-         
-         `controls`:
-         Mobile: `relative h-24 bg-black flex ...`.
-         Desktop: `absolute bottom-6 left-1/2 ...`.
-         
-         THIS IS THE WAY. Single set of elements. CSS responsiveness.
-         
-         Let's refine:
-         Wrapper `div id="modal-content"`: `flex flex-col md:block relative ...`
-         
-    */
-    </style>
-</head>
-<body class="...">
-...
-<!-- Modal -->
-    <div id="call-modal" class="fixed inset-0 z-50 bg-black hidden flex items-center justify-center p-0 md:p-4">
-
-        <div id="modal-content"
-            class="w-full h-full md:h-auto md:max-w-6xl md:aspect-video bg-black md:bg-gray-900 md:rounded-2xl overflow-hidden md:border md:border-white/10 md:shadow-2xl flex flex-col md:block relative">
-
-            <!-- Local Video (Mobile: Top Bar | Desktop: PiP) -->
-            <div id="video-local-container"
-                class="order-1 w-full h-32 bg-black flex justify-end p-4 md:absolute md:bottom-6 md:right-6 md:w-56 md:h-40 md:bg-gray-800 md:rounded-xl md:border md:border-white/20 md:shadow-2xl md:z-20 md:p-0 overflow-hidden">
-                <!-- On mobile, the video inside needs to be sized? -->
-                <!-- We'll treat this container as the track target. Agora fills it. -->
-            </div>
-
-            <!-- Remote Video (Mobile: Middle | Desktop: Full) -->
-            <div id="video-remote-container"
-                class="order-2 flex-1 w-full relative md:absolute md:inset-0 md:z-0 bg-black">
-                <!-- Placeholder -->
-                <div class="flex flex-col items-center justify-center h-full text-gray-400">
-                    <p class="animate-pulse">Waiting...</p>
-                </div>
-            </div>
-
-            <!-- Controls (Mobile: Bottom Bar | Desktop: Overlay) -->
-            <div id="call-controls"
-                class="order-3 h-24 w-full bg-black flex items-center justify-center gap-8 md:absolute md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:w-auto md:h-auto md:bg-black/60 md:backdrop-blur-md md:p-3 md:rounded-full md:border md:border-white/10 md:z-20">
-
-                <button id="btn-toggle-mic"
-                    class="w-14 h-14 md:w-12 md:h-12 rounded-full bg-gray-800 md:bg-white/10 text-white flex items-center justify-center border border-white/10 md:border-0 hover:bg-white/20">
-                    <i class="fas fa-microphone"></i>
-                </button>
-
-                <button id="btn-end-call"
-                    class="w-16 h-16 md:w-14 md:h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg">
-                    <i class="fas fa-phone-slash"></i>
-                </button>
-
-                <button id="btn-toggle-cam"
-                    class="w-14 h-14 md:w-12 md:h-12 rounded-full bg-gray-800 md:bg-white/10 text-white flex items-center justify-center border border-white/10 md:border-0 hover:bg-white/20">
-                    <i class="fas fa-video"></i>
-                </button>
-            </div>
-
-            <!-- Status (Mobile: In Local Container? Or Overlay? Desktop: Overlay) -->
-            <div id="call-status"
-                class="absolute top-4 left-4 md:top-6 md:left-6 z-30 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full border border-white/10 hover:bg-black/70 transition">
-                Connecting...
-            </div>
-
-        </div>
-    </div>
-    ...
+</html>
