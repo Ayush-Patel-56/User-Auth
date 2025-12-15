@@ -22,6 +22,7 @@ from .views import (
     chat_reaction_view,
     community_chat_reaction_view,
 )
+from .views_call import get_call_token
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='api-register'),
@@ -76,4 +77,7 @@ urlpatterns = [
 
     # User Search
     path('search/users/', UserSearchView.as_view(), name='api-user-search'),
+
+    # Calling
+    path('call/token/<int:thread_id>/', get_call_token, name='api-call-token'),
 ]

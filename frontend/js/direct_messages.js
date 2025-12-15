@@ -1,4 +1,5 @@
 import { authFetch, showToast } from './utils.js';
+import { CallManager } from './call_manager.js';
 
 // Utility: Format message timestamp with relative time
 function formatMessageTime(createdAt) {
@@ -81,6 +82,10 @@ export function initDirectMessages() {
     const userSearchInput = document.getElementById('dm-user-search-input');
     const userSearchResults = document.getElementById('dm-user-search-results');
     const emojiBtn = document.getElementById('dm-emoji-btn');
+    const btnStartCall = document.getElementById('btn-start-call');
+    const btnStartVoiceCall = document.getElementById('btn-start-voice-call'); // NEW
+
+    const callManager = new CallManager(); // NEW
 
     let selectedThreadId = null;
     let isHoveringReactionMenu = false; // Track if user is hovering over reaction menu
@@ -113,6 +118,47 @@ export function initDirectMessages() {
         if (!enabled) inputEl.value = '';
     }
 
+    // Handle Video Call Button Click
+    if (btnStartCall) {
+        btnStartCall.addEventListener('click', async () => {
+            if (!selectedThreadId) return;
+            try {
+                // 1. Join the room (Video Mode)
+                await callManager.startCall(selectedThreadId, true);
+                // 2. Send the signaling message
+                await sendMessage(`📞 Started a video call`);
+            } catch (err) {
+                console.error("Call failed", err);
+                showToast("Failed to start call", "error");
+            }
+        });
+    }
+
+    // Handle Voice Call Button Click
+    if (btnStartVoiceCall) {
+        btnStartVoiceCall.addEventListener('click', async () => {
+            if (!selectedThreadId) return;
+            try {
+                // 1. Join the room (Audio Mode)
+                await callManager.startCall(selectedThreadId, false);
+                // 2. Send the signaling message
+                await sendMessage(`📞 Started a voice call`);
+            } catch (err) {
+                console.error("Voice Call failed", err);
+                showToast("Failed to start voice call", "error");
+            }
+        });
+    }
+
+
+
+    // Wiring up Call End message
+    callManager.onCallEnd = async () => {
+        if (selectedThreadId) {
+            await sendMessage("🚫 Call ended");
+        }
+    };
+
     function setHeader(otherUser) {
         const headerAvatar = document.getElementById('dm-header-avatar');
         const onlineDot = document.getElementById('dm-online-dot');
@@ -129,6 +175,8 @@ export function initDirectMessages() {
             headerAvatar.classList.add('hidden');
             onlineDot.classList.add('hidden');
             lastSeenEl.classList.add('hidden');
+            if (btnStartCall) btnStartCall.classList.add('hidden');
+            if (btnStartVoiceCall) btnStartVoiceCall.classList.add('hidden');
             return;
         }
 
@@ -170,6 +218,8 @@ export function initDirectMessages() {
             lastSeenEl.classList.add('text-gray-500');
         }
         lastSeenEl.classList.remove('hidden');
+        if (btnStartCall) btnStartCall.classList.remove('hidden');
+        if (btnStartVoiceCall) btnStartVoiceCall.classList.remove('hidden');
     }
 
     function renderThreads(threads) {
@@ -342,19 +392,35 @@ export function initDirectMessages() {
         }
     }
 
-    function renderMessages(messages) {
+    function renderMessages(originalMessages) {
         // Don't re-render if user is actively hovering over reaction menu
-        if (isHoveringReactionMenu) {
-            return;
-        }
+        if (isHoveringReactionMenu) return;
+
         messagesEl.innerHTML = '';
 
-        if (!messages || messages.length === 0) {
+        if (!originalMessages || originalMessages.length === 0) {
             messagesEl.innerHTML = '<div class="text-center text-gray-500 py-20"><p>No messages yet. Say hi!</p></div>';
             return;
         }
 
-        messages.forEach(msg => {
+        // 1. Pre-process to identify Ended Calls
+        const startedCallIds = [];
+        const endedCallMap = {};
+
+        originalMessages.forEach(msg => {
+            if (msg.text.includes('📞 Started a video call') || msg.text.includes('📞 Started a voice call')) {
+                startedCallIds.push(msg.id);
+            } else if (msg.text.includes('🎥 Video call ended') || msg.text.includes('🚫 Call ended')) {
+                const lastStartId = startedCallIds.pop();
+                if (lastStartId) endedCallMap[lastStartId] = true;
+            }
+        });
+
+        // 2. Filter out "Ended" messages from display
+        const messagesToRender = originalMessages.filter(msg =>
+            !msg.text.includes('🎥 Video call ended') && !msg.text.includes('🚫 Call ended'));
+
+        messagesToRender.forEach(msg => {
             const isMe = msg.is_me;
             const div = document.createElement('div');
             div.className = `flex gap-3 mb-4 ${isMe ? 'flex-row-reverse' : 'flex-row'} group`;
@@ -376,7 +442,45 @@ export function initDirectMessages() {
                 ? `<button class="dm-delete-msg text-xs text-red-400 hover:text-red-300 ml-2 opacity-50 hover:opacity-100 transition" data-id="${msg.id}"><i class="fas fa-trash"></i></button>`
                 : '';
 
-            // Quick reactions menu (WhatsApp style)
+            // Handle Call Invites State
+            let messageContent = msg.text;
+            if (msg.text.includes('📞 Started a video call') || msg.text.includes('📞 Started a voice call')) {
+                const isVoice = msg.text.includes('voice');
+                const isEnded = endedCallMap[msg.id];
+                const btnText = isEnded ? 'Call Ended' : (isVoice ? 'Join Voice Call' : 'Join Video Call');
+                const btnAttr = isEnded ? 'disabled' : `data-thread-id="${selectedThreadId}"`;
+
+                // Styles
+                const btnBg = isVoice ? 'bg-purple-500 hover:bg-purple-600' : 'bg-green-500 hover:bg-green-600';
+                const shadowColor = isVoice ? 'shadow-purple-500/20' : 'shadow-green-500/20';
+
+                const btnClass = isEnded
+                    ? 'px-3 py-1.5 rounded-full text-xs text-gray-400 font-medium bg-gray-800 border border-gray-700 cursor-not-allowed'
+                    : `join-call-btn mt-1 ${btnBg} text-white text-xs px-3 py-1.5 rounded-full transition font-semibold shadow-lg ${shadowColor}`;
+
+                const iconColor = isEnded
+                    ? 'bg-gray-700 text-gray-500'
+                    : (isVoice ? 'bg-purple-500 text-white animate-pulse' : 'bg-green-500 text-white animate-pulse');
+
+                const iconClass = isVoice ? 'fa-phone' : 'fa-video';
+                const titleText = isVoice ? 'Voice Call' : 'Video Call';
+
+                messageContent = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${iconColor} flex items-center justify-center">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm ${isEnded ? 'text-gray-400' : 'text-gray-200'}">${titleText}</p>
+                            <button class="${btnClass}" ${btnAttr} data-is-video="${!isVoice}">
+                                ${btnText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Quick reactions (WhatsApp style)
             const quickReactions = `
                 <div class="quick-reaction-menu absolute -top-8 ${isMe ? 'right-0' : 'left-0'} bg-gray-800/95 backdrop-blur-md rounded-full px-2 py-1 hidden group-hover:flex items-center gap-1 shadow-lg border border-white/10 z-10">
                     ${QUICK_EMOJIS.map(emoji => `
@@ -385,7 +489,7 @@ export function initDirectMessages() {
                 </div>
             `;
 
-            // Render existing reactions
+            // Reactions
             const reactionsHtml = msg.reactions && msg.reactions.length > 0 ? `
                 <div class="flex flex-wrap gap-1 mt-1">
                     ${msg.reactions.map(r => {
@@ -411,7 +515,7 @@ export function initDirectMessages() {
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">${msg.username}</span>
                         ${deleteBtn}
                     </div>
-                    <div class="${bubbleClass} px-4 py-2 shadow-sm break-words text-sm leading-relaxed">${msg.text}</div>
+                    <div class="${bubbleClass} px-4 py-2 shadow-sm break-words text-sm leading-relaxed">${messageContent}</div>
                     <span class="text-[9px] text-gray-500 mt-1 px-1">${formatMessageTime(msg.created_at)}</span>
                     ${reactionsHtml}
                 </div>
@@ -420,36 +524,26 @@ export function initDirectMessages() {
             messagesEl.appendChild(div);
         });
 
-        // Track hover state on reaction menus to prevent re-render interruption
+        // Event Listeners
         messagesEl.querySelectorAll('.quick-reaction-menu').forEach(menu => {
-            menu.addEventListener('mouseenter', () => {
-                isHoveringReactionMenu = true;
-            });
-            menu.addEventListener('mouseleave', () => {
-                isHoveringReactionMenu = false;
-            });
+            menu.addEventListener('mouseenter', () => isHoveringReactionMenu = true);
+            menu.addEventListener('mouseleave', () => isHoveringReactionMenu = false);
         });
 
-        // Add event listeners for quick reactions
         messagesEl.querySelectorAll('.quick-react-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const msgId = btn.getAttribute('data-msg-id');
-                const emoji = btn.getAttribute('data-emoji');
-                await addReaction(msgId, emoji);
+                await addReaction(btn.getAttribute('data-msg-id'), btn.getAttribute('data-emoji'));
             });
         });
 
-        // Add event listeners for reaction bubbles (click to remove)
         messagesEl.querySelectorAll('.reaction-bubble').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const msgId = btn.getAttribute('data-msg-id');
                 const emoji = btn.getAttribute('data-emoji');
-                const reaction = messages.find(m => m.id == msgId)?.reactions.find(r => r.emoji === emoji);
-                const hasUserReacted = reaction?.users.some(u => u.is_me);
-
-                if (hasUserReacted) {
+                const reaction = messagesToRender.find(m => m.id == msgId)?.reactions.find(r => r.emoji === emoji);
+                if (reaction?.users.some(u => u.is_me)) {
                     await removeReaction(msgId, emoji);
                 } else {
                     await addReaction(msgId, emoji);
@@ -459,6 +553,25 @@ export function initDirectMessages() {
 
         messagesEl.querySelectorAll('.dm-delete-msg').forEach(btn => {
             btn.addEventListener('click', deleteMessage);
+        });
+
+        // Join Call Buttons (Only for active calls)
+        messagesEl.querySelectorAll('.join-call-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const threadId = btn.getAttribute('data-thread-id');
+                // Detect video preference from data attribute
+                const isVideoStr = btn.getAttribute('data-is-video');
+                const isVideo = isVideoStr === 'true';
+
+                if (!threadId) return showToast("Error: Invalid thread ID", "error");
+                try {
+                    await callManager.startCall(threadId, isVideo);
+                } catch (err) {
+                    console.error("Join failed", err);
+                    showToast("Could not join call: " + err.message, "error");
+                }
+            });
         });
 
         messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -477,6 +590,20 @@ export function initDirectMessages() {
         renderMessages(messages);
     }
 
+    async function sendMessage(text) {
+        if (!selectedThreadId || !text) return;
+        const res = await authFetch(`/api/dm/threads/${selectedThreadId}/messages/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        });
+        if (res.ok) {
+            await loadMessages();
+            await loadThreads(false);
+        }
+        return res;
+    }
+
     async function deleteMessage(e) {
         // Removed validation alert as requested
         const id = e.currentTarget.getAttribute('data-id');
@@ -490,23 +617,11 @@ export function initDirectMessages() {
 
     formEl.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!selectedThreadId) return;
-
         const text = inputEl.value.trim();
         if (!text) return;
 
         inputEl.value = '';
-
-        const res = await authFetch(`/api/dm/threads/${selectedThreadId}/messages/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
-
-        if (res.ok) {
-            await loadMessages();
-            await loadThreads(false);
-        }
+        await sendMessage(text);
     });
 
     async function createOrGetThread(username) {
