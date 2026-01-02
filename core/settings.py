@@ -228,3 +228,25 @@ SIMPLE_JWT = {
 
  
 GOOGLE_CLIENT_ID = '715843950550-diqg03nmv5dh756r366q9gq33bpu778p.apps.googleusercontent.com' 
+
+# Logging Configuration (Prints errors to Render Console)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
