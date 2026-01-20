@@ -159,6 +159,21 @@
 
                 <p id="signup-error" class="text-red-400 text-sm"></p>
             </form>
+
+            <!-- OTP Form (Hidden initially) -->
+            <form id="otp-form" class="space-y-3 hidden">
+                <p class="text-sm text-gray-400 mb-4">We sent a verification code to <span id="otp-email-display"
+                        class="text-white font-bold"></span></p>
+                <input name="otp" placeholder="Enter 6-digit code"
+                    class="input text-center tracking-[0.5em] text-xl font-mono" maxlength="6" required />
+
+                <div class="flex gap-3 mt-4">
+                    <button type="submit" class="btn-primary">Verify</button>
+                    <!-- <button type="button" class="btn-secondary">Resend</button> -->
+                </div>
+                <p id="otp-error" class="text-red-400 text-sm"></p>
+            </form>
+
         </div>
     </div>
 

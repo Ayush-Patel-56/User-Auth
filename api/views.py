@@ -1,5 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
+import random
+from homepage.models import EmailOTP
 
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
@@ -30,20 +34,87 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Create the user
+        # Create the user BUT set as inactive until OTP verification
         user = serializer.save()
+        user.is_active = False
+        user.save()
 
-        # Generate tokens
+        # Generate OTP
+        otp_code = str(random.randint(100000, 999999))
+        print(f"------------------------------------")
+        print(f"DEBUG OTP for {user.email}: {otp_code}")
+        print(f"------------------------------------")
+        
+        # Save OTP
+        EmailOTP.objects.update_or_create(
+            user=user,
+            defaults={'otp': otp_code}
+        )
+
+        # Send Email
+        try:
+            send_mail(
+                'Verify your account',
+                f'Your OTP is: {otp_code}',
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # If email fails, you might want to delete the user or handle it.
+            # For now, we'll just print error and return it for debugging (or use console backend)
+            print(f"Error sending email: {e}")
+
+        # Return success (Do NOT return tokens yet)
+        return Response({
+            "detail": "OTP sent to email.",
+            "email": user.email
+        }, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_otp(request):
+    """
+    POST /api/verify-otp/
+    Body: { "email": "...", "otp": "..." }
+    """
+    email = request.data.get('email')
+    otp = request.data.get('otp')
+
+    if not email or not otp:
+        return Response({"detail": "Email and OTP are required"}, status=400)
+
+    try:
+        user = User.objects.get(email__iexact=email)
+    except User.DoesNotExist:
+        return Response({"detail": "User not found"}, status=404)
+
+    # Check database OTP
+    try:
+        email_otp = user.otp
+    except EmailOTP.DoesNotExist:
+        return Response({"detail": "No OTP generated for this user"}, status=400)
+
+    if email_otp.otp == otp and email_otp.is_valid():
+        # Success!
+        user.is_active = True
+        user.save()
+        
+        # Cleanup
+        email_otp.delete()
+
+        # Generate Tokens
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
-        # JSON Response to frontend
         return Response({
-            "username": user.username,
-            "email": user.email,
+            "message": "Account verified successfully",
             "access": str(access),
             "refresh": str(refresh),
-        }, status=status.HTTP_201_CREATED)
+            "username": user.username,
+        })
+    else:
+        return Response({"detail": "Invalid or expired OTP"}, status=400)
 
 
 # -------------------------------------------------------------

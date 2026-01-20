@@ -366,11 +366,27 @@ export function initAuth() {
                     return;
                 }
 
+                // If OTP was sent
+                if (data.detail && data.email) {
+                    setButtonLoading(submitBtn, false);
+
+                    // Switch Forms
+                    document.getElementById("signup-form").classList.add("hidden");
+                    const otpForm = document.getElementById("otp-form");
+                    otpForm.classList.remove("hidden");
+
+                    document.getElementById("otp-email-display").textContent = data.email;
+
+                    // Setup OTP Handler
+                    setupOtpHandler(data.email, baseUrl);
+                    return;
+                }
+
+                // Fallback (Direct Login if backend changes back)
                 localStorage.setItem("access", data.access);
                 localStorage.setItem("refresh", data.refresh);
 
                 console.log("Signup successful. Redirecting to dashboard...");
-                // Keep loading state while redirecting
                 window.location.assign(window.location.origin + '/dashboard/');
 
             } catch (error) {
@@ -379,6 +395,55 @@ export function initAuth() {
                 setButtonLoading(submitBtn, false);
             }
         });
+
+        function setupOtpHandler(email, baseUrl) {
+            const otpForm = document.getElementById("otp-form");
+
+            // Remove old listeners to avoid duplicates if user retries
+            const newForm = otpForm.cloneNode(true);
+            otpForm.parentNode.replaceChild(newForm, otpForm);
+
+            newForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const btn = newForm.querySelector("button[type='submit']");
+                const err = document.getElementById("otp-error");
+                const otp = newForm.querySelector("input[name='otp']").value.trim();
+
+                err.textContent = "";
+                setButtonLoading(btn, true);
+
+                try {
+                    const res = await fetch(baseUrl + "/api/verify-otp/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email, otp }),
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        err.textContent = data.detail || "Verification failed";
+                        setButtonLoading(btn, false);
+                        return;
+                    }
+
+                    // Success
+                    localStorage.setItem("access", data.access);
+                    localStorage.setItem("refresh", data.refresh);
+
+                    showToast("Account Verified!", "success");
+
+                    setTimeout(() => {
+                        window.location.assign(window.location.origin + '/dashboard/');
+                    }, 500);
+
+                } catch (error) {
+                    console.error("OTP error:", error);
+                    err.textContent = "Network error.";
+                    setButtonLoading(btn, false);
+                }
+            });
+        }
 
 
         // -------------------------------------------------------------

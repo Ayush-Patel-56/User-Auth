@@ -21,11 +21,13 @@ from .views import (
     message_reaction_view,
     chat_reaction_view,
     community_chat_reaction_view,
+    verify_otp,
 )
 from .views_call import get_call_token
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='api-register'),
+    path('verify-otp/', verify_otp, name='api-verify-otp'),
     path('resolve-username/', resolve_username, name='resolve-username'),
     path('me/', me_view, name='api-me'),
     

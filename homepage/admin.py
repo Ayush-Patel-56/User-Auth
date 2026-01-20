@@ -9,3 +9,6 @@ admin.site.register(Profile)
 admin.site.register(UserPhoto)
 admin.site.register(PhotoLike)
 admin.site.register(PhotoComment)
+
+from .models import EmailOTP
+admin.site.register(EmailOTP)

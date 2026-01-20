@@ -3,6 +3,20 @@ from django.contrib.auth.models import User
 from django.db.models import UniqueConstraint
 from django.utils.text import slugify
 from django.utils import timezone
+import random
+
+class EmailOTP(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='otp')
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        # Valid for 10 minutes
+        return timezone.now() - self.created_at < timezone.timedelta(minutes=10)
+
+    def __str__(self):
+        return f"OTP for {self.user.username}"
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
