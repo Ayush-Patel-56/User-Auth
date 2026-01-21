@@ -61,9 +61,10 @@ class RegisterView(generics.CreateAPIView):
                 fail_silently=False,
             )
         except Exception as e:
-            # If email fails, you might want to delete the user or handle it.
-            # For now, we'll just print error and return it for debugging (or use console backend)
+            # If email fails, delete the user so they can try again
+            user.delete()
             print(f"Error sending email: {e}")
+            return Response({"detail": f"Error sending verification email: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Return success (Do NOT return tokens yet)
         return Response({
