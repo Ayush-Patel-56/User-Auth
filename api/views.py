@@ -193,7 +193,14 @@ class UserPhotoListCreateView(generics.ListCreateAPIView):
         return UserPhoto.objects.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            print("DEBUG: Starting photo upload...")
+            serializer.save(user=self.request.user)
+            print("DEBUG: Photo upload success.")
+        except Exception as e:
+            print(f"UPLOAD ERROR: {str(e)}")
+            # Re-raise to let DRF handle the error response, or we could raise ValidationError
+            raise e
 
 class UserPhotoDetailView(generics.DestroyAPIView):
     queryset = UserPhoto.objects.all()
