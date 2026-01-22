@@ -266,9 +266,9 @@ class DirectMessage(models.Model):
     def save(self, *args, **kwargs):
         """Override save to encrypt message text before storing."""
         # Encrypt message if not already encrypted
-        if self.text and not self._is_encrypted(self.text):
-            from .encryption import MessageEncryption
-            self.text = MessageEncryption.encrypt(self.text)
+        # if self.text and not self._is_encrypted(self.text):
+        #     from .encryption import MessageEncryption
+        #     self.text = MessageEncryption.encrypt(self.text)
         
         super().save(*args, **kwargs)
         
