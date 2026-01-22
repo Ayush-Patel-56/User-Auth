@@ -592,16 +592,26 @@ export function initDirectMessages() {
 
     async function sendMessage(text) {
         if (!selectedThreadId || !text) return;
-        const res = await authFetch(`/api/dm/threads/${selectedThreadId}/messages/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
-        if (res.ok) {
-            await loadMessages();
-            await loadThreads(false);
+        try {
+            const res = await authFetch(`/api/dm/threads/${selectedThreadId}/messages/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text }),
+            });
+
+            if (res.ok) {
+                await loadMessages();
+                await loadThreads(false);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                showToast(data.detail || "Failed to send message", "error");
+                console.error("Send message failed:", res.status, data);
+            }
+            return res;
+        } catch (error) {
+            console.error("Network error sending message:", error);
+            showToast("Network error. Please try again.", "error");
         }
-        return res;
     }
 
     async function deleteMessage(e) {
