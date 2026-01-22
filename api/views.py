@@ -192,15 +192,19 @@ class UserPhotoListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return UserPhoto.objects.filter(user=self.request.user).order_by('-created_at')
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         try:
-            print("DEBUG: Starting photo upload...")
-            serializer.save(user=self.request.user)
-            print("DEBUG: Photo upload success.")
+            return super().create(request, *args, **kwargs)
         except Exception as e:
-            print(f"UPLOAD ERROR: {str(e)}")
-            # Re-raise to let DRF handle the error response, or we could raise ValidationError
-            raise e
+            # Catch ANY error (S3, Validation, Database) and return it as JSON
+            import traceback
+            error_details = str(e) or "Unknown Server Error"
+            print("UPLOAD CRASH:", traceback.format_exc()) # Log for Vercel
+            return Response({"detail": f"Upload Failed: {error_details}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, serializer):
+        print("DEBUG: Saving photo...")
+        serializer.save(user=self.request.user)
 
 class UserPhotoDetailView(generics.DestroyAPIView):
     queryset = UserPhoto.objects.all()
