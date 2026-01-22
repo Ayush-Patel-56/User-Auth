@@ -39,8 +39,12 @@ class MessageEncryption:
         """
         if not plaintext:
             return plaintext
-        cipher = MessageEncryption.get_cipher()
-        return cipher.encrypt(plaintext.encode()).decode()
+        try:
+            cipher = MessageEncryption.get_cipher()
+            return cipher.encrypt(plaintext.encode()).decode()
+        except Exception as e:
+            print(f"ENCRYPTION ERROR (Falling back to plaintext): {e}")
+            return plaintext
     
     @staticmethod
     def decrypt(ciphertext):
