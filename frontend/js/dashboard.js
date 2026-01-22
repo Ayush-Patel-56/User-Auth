@@ -448,49 +448,52 @@ export function initDashboard() {
             setButtonLoading(submitBtn, true);
 
             // Get cropped canvas and convert to blob
-            photoCropper.getCroppedCanvas().toBlob(async (blob) => {
-                // Vercel Limit Check
-                if (blob.size > 4 * 1024 * 1024) {
-                    showToast("Image is too large (Max 4MB). Please try a smaller image.", 'error');
-                    setButtonLoading(submitBtn, false);
-                    return;
-                }
+            // Get Base64 String (JPEG 80% Quality)
+            const base64Image = photoCropper.getCroppedCanvas().toDataURL('image/jpeg', 0.8);
 
-                const formData = new FormData();
-                formData.append('image', blob, 'cropped.jpg');
-                formData.append('caption', document.getElementById('caption-input').value);
+            // Vercel Limit Check
+            if (base64Image.length > 5.5 * 1024 * 1024) {
+                showToast("Image is too large (Max 4MB).", 'error');
+                setButtonLoading(submitBtn, false);
+                return;
+            }
 
-                const res = await authFetch('/api/photos/', {
-                    method: 'POST',
-                    body: formData
-                });
+            const payload = {
+                image: base64Image,
+                caption: document.getElementById('caption-input').value
+            };
 
-                if (res.ok) {
-                    // Clean up
-                    photoModal.classList.add('hidden');
-                    photoCropper.destroy();
-                    photoCropper = null;
-                    e.target.reset();
-
-                    // Reset preview
-                    const previewImg = document.getElementById('photo-preview-img');
-                    const placeholder = document.getElementById('photo-placeholder');
-                    previewImg.classList.add('hidden');
-                    placeholder.classList.remove('hidden');
-
-                    // Show file input again
-                    photoInput.classList.remove('hidden');
-
-                    // Reload gallery
-                    loadPhotos();
-
-                    setButtonLoading(submitBtn, false);
-                } else {
-                    const data = await res.json();
-                    showToast(data.detail || "Upload failed. Limit reached?", 'error');
-                    setButtonLoading(submitBtn, false);
-                }
+            const res = await authFetch('/api/photos/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
+
+            if (res.ok) {
+                // Clean up
+                photoModal.classList.add('hidden');
+                photoCropper.destroy();
+                photoCropper = null;
+                e.target.reset();
+
+                // Reset preview
+                const previewImg = document.getElementById('photo-preview-img');
+                const placeholder = document.getElementById('photo-placeholder');
+                previewImg.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+
+                // Show file input again
+                photoInput.classList.remove('hidden');
+
+                // Reload gallery
+                loadPhotos();
+
+                setButtonLoading(submitBtn, false);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                showToast(data.detail || "Upload failed.", 'error');
+                setButtonLoading(submitBtn, false);
+            }
         });
 
         // Delete Photo (Global function for onclick)

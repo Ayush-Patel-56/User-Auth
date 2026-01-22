@@ -22,6 +22,25 @@ from homepage.models import (
 )
 
 
+
+import base64
+import uuid
+from django.core.files.base import ContentFile
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            try:
+                header, img_str = data.split(';base64,')
+                ext = header.split('/')[-1] 
+                decoded_file = base64.b64decode(img_str)
+                file_name = str(uuid.uuid4())[:12] + "." + ext
+                data = ContentFile(decoded_file, name=file_name)
+            except Exception:
+                pass # Let ImageField validation handle failures
+
+        return super().to_internal_value(data)
+
 class ChatMessageSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     avatar = serializers.SerializerMethodField()
@@ -296,6 +315,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return []
 
 class UserPhotoSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
     is_liked = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
 
