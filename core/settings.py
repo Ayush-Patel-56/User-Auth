@@ -31,7 +31,8 @@ MESSAGE_ENCRYPTION_KEY = os.environ.get('MESSAGE_ENCRYPTION_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Render sets 'RENDER' env var to 'true'
-DEBUG = 'RENDER' not in os.environ
+# DEBUG = 'RENDER' not in os.environ
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
