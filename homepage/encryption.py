@@ -59,10 +59,11 @@ class MessageEncryption:
         """
         if not ciphertext:
             return ciphertext
-        cipher = MessageEncryption.get_cipher()
         try:
+            cipher = MessageEncryption.get_cipher()
             return cipher.decrypt(ciphertext.encode()).decode()
         except Exception as e:
-            # If decryption fails, might be unencrypted legacy message
-            # Return as-is for backward compatibility during migration
+            # If decryption fails (bad key, legacy text, missing env var), 
+            # return as-is to prevent 500 crashes
+            print(f"DECRYPTION ERROR: {e}")
             return ciphertext
