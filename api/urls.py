@@ -22,6 +22,7 @@ from .views import (
     chat_reaction_view,
     community_chat_reaction_view,
     verify_otp,
+    debug_s3_connection,
 )
 from .views_call import get_call_token
 
@@ -82,4 +83,7 @@ urlpatterns = [
 
     # Calling
     path('call/token/<int:thread_id>/', get_call_token, name='api-call-token'),
+    
+    # Debug
+    path('debug-s3/', debug_s3_connection, name='api-debug-s3'),
 ]

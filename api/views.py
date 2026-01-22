@@ -212,6 +212,50 @@ class UserPhotoDetailView(generics.DestroyAPIView):
         return UserPhoto.objects.filter(user=self.request.user)
 
 # -------------------------------------------------------------
+# DEBUG S3 CONNECTION
+# -------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def debug_s3_connection(request):
+    import boto3
+    from django.conf import settings
+    
+    try:
+        # Check keys presence
+        key_id = settings.AWS_ACCESS_KEY_ID
+        secret = settings.AWS_SECRET_ACCESS_KEY
+        
+        if not key_id or not secret:
+            return Response({"status": "error", "detail": "AWS Keys are MISSING in settings."}, status=500)
+
+        # Try connection
+        session = boto3.session.Session()
+        s3 = session.client(
+            's3',
+            region_name=settings.AWS_S3_REGION_NAME,
+            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+            aws_access_key_id=key_id,
+            aws_secret_access_key=secret,
+        )
+        
+        # List buckets or just check object
+        s3.list_buckets()
+        
+        return Response({
+            "status": "success", 
+            "detail": "S3 Connection Successful!",
+            "key_prefix": key_id[:4] + "***",
+            "bucket": settings.AWS_STORAGE_BUCKET_NAME
+        })
+    except Exception as e:
+        return Response({
+            "status": "error", 
+            "detail": str(e),
+            "type": type(e).__name__
+        }, status=500)
+
+
+# -------------------------------------------------------------
 # EDUCATION MANAGEMENT (LIST / CREATE / UPDATE / DELETE)
 # -------------------------------------------------------------
 class EducationListCreateView(generics.ListCreateAPIView):
