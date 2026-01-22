@@ -161,6 +161,12 @@ MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'  <-- Commented out for S3
 
 # Supabase Storage (S3 Compatible)
+# Force Memory Upload for Vercel (Avoids disk permission issues)
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = 'media'

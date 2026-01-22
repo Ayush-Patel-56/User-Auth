@@ -449,6 +449,13 @@ export function initDashboard() {
 
             // Get cropped canvas and convert to blob
             photoCropper.getCroppedCanvas().toBlob(async (blob) => {
+                // Vercel Limit Check
+                if (blob.size > 4 * 1024 * 1024) {
+                    showToast("Image is too large (Max 4MB). Please try a smaller image.", 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
                 const formData = new FormData();
                 formData.append('image', blob, 'cropped.jpg');
                 formData.append('caption', document.getElementById('caption-input').value);
