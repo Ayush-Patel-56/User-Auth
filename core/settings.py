@@ -171,6 +171,7 @@ AWS_DEFAULT_ACL = 'public-read'
 AWS_QUERYSTRING_AUTH = False
 AWS_S3_ADDRESSING_STYLE = "path"
 AWS_S3_CUSTOM_DOMAIN = 'tyeszjpfmtmftibxibwj.supabase.co/storage/v1/object/public/media'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
 
 STORAGES = {
     
