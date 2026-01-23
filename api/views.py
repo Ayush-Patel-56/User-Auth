@@ -235,9 +235,8 @@ class UserPhotoListCreateView(generics.ListCreateAPIView):
                 s3_client.put_object(
                     Bucket=bucket_name,
                     Key=file_path,
-                    Body=image_file.read(),
-                    ContentType='image/jpeg', # Explicit content type
-                    ACL='public-read' # Try explicit ACL
+                    Body=image_file.read()
+                    # Removed ACL and ContentType to avoid Signature Mismatches if Supabase strips them
                 )
                 upload_success = True
                 print(f"DEBUG: Upload SUCCESS with region {region}")
