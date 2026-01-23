@@ -58,22 +58,14 @@ export function initPublicProfile() {
         if (!username) return;
 
         try {
-            // We need to fetch education for this specific user
-            // First, get the access token if logged in
             const headers = accessToken ? {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             } : { 'Content-Type': 'application/json' };
 
-            // For now, we'll make education public by fetching via the user's photos endpoint
-            // But we need to create a public endpoint. Let's use a workaround for now.
-            // We'll need to add a public endpoint later, for now let's just hide the section if not logged in or not the owner
+            // Fetch public data filtering by username
+            const res = await fetch(`/api/education/?username=${username}`, { headers });
 
-            // Skip for simplicity - we'd need to add a public education endpoint
-            // Just show it if we have access token
-            if (!accessToken) return;
-
-            const res = await fetch('/api/education/', { headers });
             if (res.ok) {
                 const educations = await res.json();
                 const educationSection = document.getElementById('education-section');
@@ -91,6 +83,8 @@ export function initPublicProfile() {
                             </p>
                         </div>
                     `).join('');
+                } else {
+                    // Keep hidden if empty
                 }
             }
         } catch (error) {
@@ -115,10 +109,9 @@ export function initPublicProfile() {
                 'Content-Type': 'application/json'
             } : { 'Content-Type': 'application/json' };
 
-            // Just show it if we have access token (viewing own profile)
-            if (!accessToken) return;
+            // Fetch public data filtering by username
+            const res = await fetch(`/api/experience/?username=${username}`, { headers });
 
-            const res = await fetch('/api/experience/', { headers });
             if (res.ok) {
                 const experiences = await res.json();
                 const experienceSection = document.getElementById('experience-section');
@@ -173,10 +166,9 @@ export function initPublicProfile() {
                 'Content-Type': 'application/json'
             } : { 'Content-Type': 'application/json' };
 
-            // Just show it if we have access token (viewing own profile)
-            if (!accessToken) return;
+            // Fetch public data filtering by username
+            const res = await fetch(`/api/skills/?username=${username}`, { headers });
 
-            const res = await fetch('/api/skills/', { headers });
             if (res.ok) {
                 const skills = await res.json();
                 const skillsSection = document.getElementById('skills-section');

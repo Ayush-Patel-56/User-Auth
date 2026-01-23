@@ -322,16 +322,25 @@ def debug_s3_connection(request):
 # -------------------------------------------------------------
 class EducationListCreateView(generics.ListCreateAPIView):
     """
-    GET /api/education/ -> List user's education entries
+    GET /api/education/ -> List user's education entries (or ?username=xyz)
     POST /api/education/ -> Add new education entry
     """
     serializer_class = EducationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Education.objects.filter(user=self.request.user).order_by('-start_year')
+        username = self.request.query_params.get('username')
+        if username:
+            return Education.objects.filter(user__username=username).order_by('-start_year')
+        
+        if self.request.user.is_authenticated:
+            return Education.objects.filter(user=self.request.user).order_by('-start_year')
+        return Education.objects.none()
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Authentication required.")
         serializer.save(user=self.request.user)
 
 class EducationDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -352,16 +361,25 @@ class EducationDetailView(generics.RetrieveUpdateDestroyAPIView):
 # -------------------------------------------------------------
 class ExperienceListCreateView(generics.ListCreateAPIView):
     """
-    GET /api/experience/ -> List user's experience entries
+    GET /api/experience/ -> List user's experience entries (or ?username=xyz)
     POST /api/experience/ -> Add new experience entry
     """
     serializer_class = ExperienceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Experience.objects.filter(user=self.request.user).order_by('-start_date')
+        username = self.request.query_params.get('username')
+        if username:
+            return Experience.objects.filter(user__username=username).order_by('-start_date')
+        
+        if self.request.user.is_authenticated:
+            return Experience.objects.filter(user=self.request.user).order_by('-start_date')
+        return Experience.objects.none()
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Authentication required.")
         serializer.save(user=self.request.user)
 
 class ExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -382,16 +400,25 @@ class ExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
 # -------------------------------------------------------------
 class SkillListCreateView(generics.ListCreateAPIView):
     """
-    GET /api/skills/ -> List user's skills
+    GET /api/skills/ -> List user's skills (or ?username=xyz)
     POST /api/skills/ -> Add new skill
     """
     serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Skill.objects.filter(user=self.request.user).order_by('name')
+        username = self.request.query_params.get('username')
+        if username:
+            return Skill.objects.filter(user__username=username).order_by('name')
+        
+        if self.request.user.is_authenticated:
+            return Skill.objects.filter(user=self.request.user).order_by('name')
+        return Skill.objects.none()
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Authentication required.")
         serializer.save(user=self.request.user)
 
 class SkillDetailView(generics.DestroyAPIView):
