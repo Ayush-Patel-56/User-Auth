@@ -193,18 +193,77 @@ class UserPhotoListCreateView(generics.ListCreateAPIView):
         return UserPhoto.objects.filter(user=self.request.user).order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except Exception as e:
-            # Catch ANY error (S3, Validation, Database) and return it as JSON
-            import traceback
-            error_details = str(e) or "Unknown Server Error"
-            print("UPLOAD CRASH:", traceback.format_exc()) # Log for Vercel
-            return Response({"detail": f"Upload Failed: {error_details}"}, status=status.HTTP_400_BAD_REQUEST)
+        # 1. Validation
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # 2. Extract Data
+        # Base64ImageField converts data to ContentFile, so validated_data['image'] is a file
+        image_file = serializer.validated_data['image']
+        caption = serializer.validated_data.get('caption', '')
+        
+        # 3. Manual Boto3 Upload (Bypass Storage Backend)
+        import boto3
+        from botocore.config import Config
+        from django.conf import settings
+        
+        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        file_path = f"gallery/{image_file.name}" # Define path manually
+        
+        upload_success = False
+        last_error = ""
+
+        # S3 Client Configuration
+        # We try multiple region configurations to account for Supabase quirks
+        regions_to_try = ['ap-southeast-1', 'us-east-1']
+        
+        for region in regions_to_try:
+            try:
+                print(f"DEBUG: Attempting upload to region {region}...")
+                s3_client = boto3.client(
+                    's3',
+                    endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                    region_name=region,
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    config=Config(signature_version='s3v4')
+                )
+                
+                # Reset file pointer just in case
+                image_file.seek(0)
+                
+                s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=file_path,
+                    Body=image_file.read(),
+                    ContentType='image/jpeg', # Explicit content type
+                    ACL='public-read' # Try explicit ACL
+                )
+                upload_success = True
+                print(f"DEBUG: Upload SUCCESS with region {region}")
+                break # Stop if success
+            except Exception as e:
+                print(f"DEBUG: Upload failed with region {region}: {e}")
+                last_error = str(e)
+
+        if not upload_success:
+             return Response({"detail": f"Upload Failed (S3): {last_error}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # 4. Save to Database (Image path string only)
+        # We manually create the object to avoid Model.save() triggering another upload
+        photo = UserPhoto(
+            user=request.user,
+            caption=caption
+        )
+        # Manually set the name field (avoids storage backend upload)
+        photo.image.name = file_path 
+        photo.save()
+        
+        # Return standard response
+        return Response(UserPhotoSerializer(photo, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
-        print("DEBUG: Saving photo...")
-        serializer.save(user=self.request.user)
+        pass # Not used anymore since we override create()
 
 class UserPhotoDetailView(generics.DestroyAPIView):
     queryset = UserPhoto.objects.all()
