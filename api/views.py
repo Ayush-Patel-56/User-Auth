@@ -224,8 +224,8 @@ class UserPhotoListCreateView(generics.ListCreateAPIView):
                     's3',
                     endpoint_url=settings.AWS_S3_ENDPOINT_URL,
                     region_name=region,
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID.strip() if settings.AWS_ACCESS_KEY_ID else None,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY.strip() if settings.AWS_SECRET_ACCESS_KEY else None,
                     config=Config(signature_version='s3v4')
                 )
                 
