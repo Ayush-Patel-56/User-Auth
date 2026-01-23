@@ -562,7 +562,7 @@ export function initDashboard() {
                     
                     <!-- Names -->
                     <div class="flex-1 min-w-0">
-                        <div class="font-bold text-white text-sm truncate">${user.display_name}</div>
+                        <div class="font-bold text-white text-sm truncate">${user.display_name || user.username}</div>
                         <div class="text-gray-500 text-xs truncate">@${user.username}</div>
                     </div>
                 </div>
